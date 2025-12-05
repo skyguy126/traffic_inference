@@ -1,4 +1,8 @@
+import sys
 import util
+
+import carla
+from camera import build_intrinsic_matrix, get_world_from_pixels
 
 import cv2
 import numpy as np
@@ -12,11 +16,20 @@ import json
 
 import torchreid
 
-PATH_4 = "/home/ubuntu/M202A-CARLA/scripts/global_id_test_videos/black_blue/camera_4.mp4"
-PATH_5 = "/home/ubuntu/M202A-CARLA/scripts/global_id_test_videos/black_blue/camera_5.mp4"
+'''
+Interesting reading material:
 
-OUTPUT_4_PATH = "/home/ubuntu/M202A-CARLA/scripts/global_id_test_videos/black_blue/camera_4_input.json"
-OUTPUT_5_PATH = "/home/ubuntu/M202A-CARLA/scripts/global_id_test_videos/black_blue/camera_5_input.json"
+https://github.com/JDAI-CV/fast-reid/blob/master/INSTALL.md
+https://github.com/sekilab/VehicleReIdentificationDataset?tab=readme-ov-file
+
+Can finetune osnet with carla data to make the embedding more stable.
+'''
+
+PATH_4 = "/home/ubuntu/M202A-CARLA/scripts/global_id_test_videos/red_green/camera_4.mp4"
+PATH_5 = "/home/ubuntu/M202A-CARLA/scripts/global_id_test_videos/red_green/camera_5.mp4"
+
+OUTPUT_4_PATH = "/home/ubuntu/M202A-CARLA/scripts/global_id_test_videos/red_green/camera_4_input.json"
+OUTPUT_5_PATH = "/home/ubuntu/M202A-CARLA/scripts/global_id_test_videos/red_green/camera_5_input.json"
 
 COLOR = (0, 255, 0) # green for active tracking
 
@@ -185,6 +198,24 @@ class GlobalAppearanceTracker:
         return assigned_ids
 
 def main() -> None:
+
+    # ---------------------------
+    # Camera projetion setup
+    # ---------------------------
+
+    # setup camera intrinsics for projecting to world frame.
+    GROUND_Z = 0.0
+    K = build_intrinsic_matrix(util.WIDTH, util.HEIGHT, util.FOV)
+    
+    cam4_params = util.CAMERA_CONFIGS[0]
+    cam4_loc = carla.Location(*cam4_params['pos'])
+    cam4_rot = carla.Rotation(*cam4_params['rot'])
+    cam4_tf = carla.Transform(cam4_loc, cam4_rot)
+
+    cam5_params = util.CAMERA_CONFIGS[0]
+    cam5_loc = carla.Location(*cam5_params['pos'])
+    cam5_rot = carla.Rotation(*cam5_params['rot'])
+    cam5_tf = carla.Transform(cam5_loc, cam5_rot)
     
     # ---------------------------
     # Video setup
@@ -266,8 +297,8 @@ def main() -> None:
             verbose=False,
         )[0]
 
-        dets_cam4 = []  # (embedding, bbox, local_id)
-        dets_cam5 = []
+        dets_cam4 = [] # (embedding, bbox, local_id, world_pos)
+        dets_cam5 = [] # (embedding, bbox, local_id, world_pos)
 
         # Process camera 4 frame.
         for result in results4:
@@ -285,6 +316,10 @@ def main() -> None:
                     # fetch bounding box corners
                     x1, y1, x2, y2 = box_data.astype(int)
 
+                    # project bottom center of box to world
+                    anchor_x, anchor_y = (x1 + x2) / 2.0, y2
+                    world_pos = get_world_from_pixels(anchor_x, anchor_y, GROUND_Z, K, cam4_tf)
+
                     # get frame height and width
                     h5, w5 = frame4.shape[:2]
 
@@ -301,10 +336,11 @@ def main() -> None:
                     emb = extract_embedding(reid_model, device, crop)
 
                     # get resnet embedding, bounding box, and local bytetrack id
-                    dets_cam4.append((emb, [x1, y1, x2, y2], track_id))
+                    dets_cam4.append((emb, [x1, y1, x2, y2], track_id, world_pos))
 
                     # DEBUG: show green identification rectangle
                     cv2.rectangle(frame4, (x1, y1), (x2, y2), COLOR, 2)
+                    cv2.putText(frame4, f"x: {world_pos[0]:.1f}, y: {world_pos[1]:.1f}", (x1, y1-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, COLOR, 2)
                     
         # Process camera 5 frame.
         for result in results5:
@@ -322,6 +358,10 @@ def main() -> None:
                     # fetch bounding box corners
                     x1, y1, x2, y2 = box_data.astype(int)
 
+                    # project bottom center of box to world
+                    anchor_x, anchor_y = (x1 + x2) / 2.0, y2
+                    world_pos = get_world_from_pixels(anchor_x, anchor_y, GROUND_Z, K, cam5_tf)
+
                     # get frame height and width
                     h5, w5 = frame5.shape[:2]
 
@@ -338,19 +378,20 @@ def main() -> None:
                     emb = extract_embedding(reid_model, device, crop)
 
                     # get resnet embedding, bounding box, and local bytetrack id
-                    dets_cam5.append((emb, [x1, y1, x2, y2], track_id))
+                    dets_cam5.append((emb, [x1, y1, x2, y2], track_id, world_pos))
 
                     # DEBUG: show green identification rectangle
                     cv2.rectangle(frame5, (x1, y1), (x2, y2), COLOR, 2)
+                    cv2.putText(frame5, f"x: {world_pos[0]:.1f}, y: {world_pos[1]:.1f}", (x1, y1-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, COLOR, 2)
 
         # ----------------------------------------
         # 3) Global ID assignment (appearance-only)
         # ----------------------------------------
         
         if dets_cam4:
-            emb4   = [e for (e, b, tid) in dets_cam4]
-            box4   = [b for (e, b, tid) in dets_cam4]
-            lid4   = [tid for (e, b, tid) in dets_cam4]
+            emb4   = [e for (e, b, tid, wp) in dets_cam4]
+            box4   = [b for (e, b, tid, wp) in dets_cam4]
+            lid4   = [tid for (e, b, tid, wp) in dets_cam4]
             global_ids4 = global_tracker.assign_global_ids(
                 emb4, camera_id=4, frame_idx=frame_idx, bboxes=box4, local_ids=lid4
             )
@@ -359,9 +400,9 @@ def main() -> None:
             global_ids4 = []
         
         if dets_cam5:
-            emb5   = [e for (e, b, tid) in dets_cam5]
-            box5   = [b for (e, b, tid) in dets_cam5]
-            lid5   = [tid for (e, b, tid) in dets_cam5]
+            emb5   = [e for (e, b, tid, wp) in dets_cam5]
+            box5   = [b for (e, b, tid, wp) in dets_cam5]
+            lid5   = [tid for (e, b, tid, wp) in dets_cam5]
             global_ids5 = global_tracker.assign_global_ids(
                 emb5, camera_id=5, frame_idx=frame_idx, bboxes=box5, local_ids=lid5
             )
@@ -394,10 +435,11 @@ def main() -> None:
             for local_id, global_id in zip(lid4, global_ids4):
                 if global_id is None:
                     continue
+                world_pos = next((wp for (_, _, tid, wp) in dets_cam4 if tid == local_id), None) # FIXME: AI SLOP!
                 camera_4_output_frame['cars'].append({
                     'global_id': int(global_id),
                     'local_id': int(local_id),
-                    'position': [0.0, 0.0, 0.0], # TODO: fill this code in from camera.py
+                    'position': [float(world_pos[0]), float(world_pos[1]), float(GROUND_Z)] if world_pos is not None else [0.0, 0.0, 0.0],
                 })
 
         camera_4_output.append(camera_4_output_frame)
@@ -415,10 +457,11 @@ def main() -> None:
             for local_id, global_id in zip(lid5, global_ids5):
                 if global_id is None:
                     continue
+                world_pos = next((wp for (_, _, tid, wp) in dets_cam5 if tid == local_id), None) # FIXME: AI SLOP!
                 camera_5_output_frame['cars'].append({
                     'global_id': int(global_id),
                     'local_id': int(local_id),
-                    'position': [0.0, 0.0, 0.0], # TODO: fill this code in from camera.py
+                    'position': [float(world_pos[0]), float(world_pos[1]), float(GROUND_Z)] if world_pos is not None else [0.0, 0.0, 0.0],
                 })
 
         camera_5_output.append(camera_5_output_frame)
