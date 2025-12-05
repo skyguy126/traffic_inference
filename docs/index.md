@@ -168,6 +168,10 @@ List:
 * Internal modules you wrote
 * Links to repos or documentation
 
+# **8. Final Presentation**
+
+[View the final presentation here.](https://docs.google.com/presentation/d/14e4P2keh30SPoivBp-G8eDYCar3hYOaEy6AgSDjk5yw/edit?usp=sharing)
+
 ---
 
 > [!NOTE] 
