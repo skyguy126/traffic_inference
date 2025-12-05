@@ -1,9 +1,11 @@
 ---
 layout: default
-title: "Project Title"
+title: "About
+Urban Traﬃc Inference with Perimeter Vision & Encrypted-Camera Side-Channel Extraction"
 ---
 
-# **Project Title**
+# **About
+Urban Traﬃc Inference with Perimeter Vision & Encrypted-Camera Side-Channel Extraction**
 
 *A concise, descriptive title for your project.*
 
@@ -14,9 +16,16 @@ title: "Project Title"
 
 ## 👥 **Team**
 
-- Student Name #1 (email, GitHub)  
-- Student Name #2 *(delete if not applicable)*  
-- Student Name #3 *(delete if not applicable)*  
+- **Amy Lee** (siuyuetlee[at]ucla[dot]edu, [GitHub](https://github.com/Harukk246))
+- **Katherine Sohn** (katherinesohn[at]ucla[dot]edu, [GitHub](https://github.com/katherinesohn)) 
+- **Vamsi Eyunni** (veyunni[at]ucla[dot]edu, [GitHub](https://github.com/skyguy126))
+
+---
+
+## 👥 **Mentors**
+
+- **Gaofeng Dong** (gfdong[at]ucla[dot]edu)
+- **Pragya Sharma** (pragyasharma[at]ucla[dot]edu)
 
 ---
 
@@ -35,8 +44,8 @@ This should be a standalone “TL;DR” of your project.
 
 ## 📑 **Slides**
 
-- [Midterm Checkpoint Slides](http://)  
-- [Final Presentation Slides](http://)
+- [Midterm Checkpoint Slides](https://docs.google.com/presentation/d/1X-M2zomr7aMnQWdz8OJdX9qPV1sSsXszmZ0EHS2_K9M/edit?usp=sharing)  
+- [Final Presentation Slides](https://docs.google.com/presentation/d/14e4P2keh30SPoivBp-G8eDYCar3hYOaEy6AgSDjk5yw/edit?usp=sharing)
 - If Needed: Links to have any videos demonstrating your project
 
 ---
@@ -167,10 +176,6 @@ List:
 * External libraries or models
 * Internal modules you wrote
 * Links to repos or documentation
-
-# **8. Final Presentation**
-
-[View the final presentation here.](https://docs.google.com/presentation/d/14e4P2keh30SPoivBp-G8eDYCar3hYOaEy6AgSDjk5yw/edit?usp=sharing)
 
 ---
 
