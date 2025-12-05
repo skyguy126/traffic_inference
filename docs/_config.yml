@@ -10,7 +10,7 @@ description: "Course project website for EC M202A / CS M213A"
 # For project pages hosted at "https://username.github.io/repo-name", set url
 # to the full project URL and leave baseurl empty so relative asset links work.
 url: "https://skyguy126.github.io/ECM202A_2025Fall_Project_6"
-baseurl: "https://skyguy126.github.io/ECM202A_2025Fall_Project_6/docs"
+baseurl: "docs"
 
 markdown: kramdown
 kramdown:
