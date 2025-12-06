@@ -22,6 +22,9 @@ ROTATION_STEP = 2.0  # degrees per key press
 INITIAL_LOCATION = carla.Location(x=151.105438, y=-200.910126, z=8.275307)
 INITIAL_ROTATION = carla.Rotation(pitch=-15.0, yaw=-178.560471, roll=0.0)
 
+# Camera save file
+CAMERA_SAVE_FILE = "camera_configs.txt"
+
 def cleanup_camera(camera):
     """Clean up the camera."""
     if camera is not None:
@@ -39,6 +42,21 @@ def print_camera_info(location, rotation):
     pitch, yaw, roll = get_euler_angles(rotation)
     print(f"Position: x={location.x:.3f}, y={location.y:.3f}, z={location.z:.3f} | "
           f"Rotation: pitch={pitch:.2f}°, yaw={yaw:.2f}°, roll={roll:.2f}°")
+
+def save_camera_config(camera_id, location, rotation):
+    """Save camera configuration to file in util.py format."""
+    pitch, yaw, roll = get_euler_angles(rotation)
+    
+    # Format: {"id": X, "pos": (x, y, z), "rot": (pitch, yaw, roll)}
+    config_line = f'    {{"id": {camera_id}, "pos": ({location.x:.3f}, {location.y:.3f}, {location.z:.3f}), "rot": ({pitch:.2f}, {yaw:.2f}, {roll:.2f})}},\n'
+    
+    # Append to file
+    with open(CAMERA_SAVE_FILE, "a") as f:
+        f.write(config_line)
+    
+    print(f"\n✓ Camera {camera_id} saved to {CAMERA_SAVE_FILE}")
+    print(f"  Position: ({location.x:.3f}, {location.y:.3f}, {location.z:.3f})")
+    print(f"  Rotation: ({pitch:.2f}, {yaw:.2f}, {roll:.2f})")
 
 def draw_info_overlay(image, location, rotation):
     """Draw camera position and orientation on the image."""
@@ -61,6 +79,7 @@ def draw_info_overlay(image, location, rotation):
         f"  Q/E: Move Z (up/down)",
         f"  Arrow Keys: Rotate pitch/yaw",
         f"  U/O: Rotate roll",
+        f"  F: Save camera config",
         f"  ESC: Exit"
     ]
     
@@ -136,9 +155,14 @@ def main():
     print("  Arrow Up/Down:   Rotate pitch")
     print("  Arrow Left/Right: Rotate yaw")
     print("  U/O:        Rotate roll")
+    print("  F:          Save camera config")
     print("  ESC:        Exit")
-    print("\nReady! Use keyboard to control the camera.")
+    print(f"\nCamera configs will be saved to: {CAMERA_SAVE_FILE}")
+    print("Ready! Use keyboard to control the camera.")
     print_camera_info(current_transform.location, current_transform.rotation)
+    
+    # Camera ID counter (starts at 1)
+    camera_id = 1
     
     # Main loop
     running = True
@@ -150,6 +174,10 @@ def main():
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     running = False
+                elif event.key == pygame.K_f:
+                    # Save current camera configuration
+                    save_camera_config(camera_id, current_transform.location, current_transform.rotation)
+                    camera_id += 1
         
         # Get current key states
         keys = pygame.key.get_pressed()

@@ -22,3 +22,4 @@ scripts/test_videos/TEST_camera_25_frames.txt
 scripts/mininet/video_features_backup
 global_label_test_videos/
 *.json
+scripts/camera_configs.txt
