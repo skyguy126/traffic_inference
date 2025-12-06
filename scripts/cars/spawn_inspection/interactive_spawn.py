@@ -62,7 +62,8 @@ try:
         vehicle = world.spawn_actor(vehicle_bp, transform)
 
         loc = transform.location
-        print(f"Spawned vehicle at: {loc.x} {loc.y} {loc.z}")
+        rot = transform.rotation
+        print(f"Spawned vehicle at: {loc.x} {loc.y} {loc.z} {rot.pitch} {rot.yaw} {rot.roll}")
 
         # Wait for Enter to despawn
         input("Press Enter to despawn vehicle...")
