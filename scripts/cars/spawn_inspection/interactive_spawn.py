@@ -60,8 +60,8 @@ try:
         # Spawn vehicle
         transform = spawn_points[index]
         vehicle = world.spawn_actor(vehicle_bp, transform)
-        
-        loc = vehicle.get_transform().location
+
+        loc = transform.location
         print(f"Spawned vehicle at: {loc.x} {loc.y} {loc.z}")
 
         # Wait for Enter to despawn
