@@ -23,6 +23,9 @@ MIN_DURATION_SECONDS = 1.5
 # Merges split events
 GAP_TOLERANCE_SECONDS = 2.0
 
+# Ignore the first 2 seconds to avoid startup noise
+IGNORE_START_SECONDS = 2.0
+
 if not os.path.exists(OUTPUT_DIR): os.makedirs(OUTPUT_DIR)
 
 def pcap_to_frame_sizes(pcap_path):
@@ -68,11 +71,11 @@ def analyze_motion(raw_sizes):
     clean_signal = raw_sizes.copy()
     clean_signal[clean_signal > iframe_threshold] = np.median(raw_sizes)
     
-    # Smooth signal
+    # Smooth signal (p-frames)
     window = 20 
     smoothed = np.convolve(clean_signal, np.ones(window)/window, mode='same')
     
-    # Calculate threshold
+    # Calculate threshold based on current noise
     baseline = np.median(smoothed)
     std_dev = np.std(smoothed)
     
@@ -94,7 +97,14 @@ def analyze_motion(raw_sizes):
     gap_limit_frames = int(GAP_TOLERANCE_SECONDS * FPS)
     min_frames = int(MIN_DURATION_SECONDS * FPS)
     
+    # Calculate frames to ignore
+    ignore_frames = int(IGNORE_START_SECONDS * FPS)
+    
     for i, size in enumerate(smoothed):
+        # ignore noise
+        if i < ignore_frames:
+            continue
+
         if size > car_threshold:
             if not is_active:
                 is_active = True
@@ -103,7 +113,7 @@ def analyze_motion(raw_sizes):
         else:
             if is_active:
                 gap_counter += 1
-                
+                # if signal jumps back then merge into one event
                 if gap_counter >= gap_limit_frames:
                     end_frame = i - gap_limit_frames
                     if (end_frame - start_frame) >= min_frames:
@@ -114,6 +124,7 @@ def analyze_motion(raw_sizes):
 
     if is_active:
         end_frame = len(smoothed)
+        # check length of event
         if (end_frame - start_frame) >= min_frames:
              events.append((start_frame, end_frame))
                 
@@ -154,7 +165,7 @@ def main():
     plt.plot(clean_signal, color='lightblue', alpha=0.5, label='P-Frames')
     plt.plot(smoothed, color='darkblue', linewidth=2, label='Smoothed')
     plt.axhline(threshold, color='red', linestyle='--', label=f'Threshold')
-    
+
     for (start, end) in events:
         plt.axvspan(start, end, color='green', alpha=0.3)
         
@@ -162,7 +173,7 @@ def main():
     plt.legend()
     plt.tight_layout()
     
-    plot_name = f"merged_plot_{int(time.time())}.png"
+    plot_name = f"plot.png"
     plt.savefig(os.path.join(OUTPUT_DIR, plot_name))
     print(f"\nVerification plot saved to: {plot_name}")
 
