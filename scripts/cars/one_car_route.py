@@ -8,6 +8,11 @@ import signal
 from behavior_agent import BehaviorAgent
 from util import FPS
 
+'''
+Used by multi_car_route to spawn a car controlled by a BehaviorAgent
+'''
+
+
 def handle_sigterm(signum, frame):
     raise KeyboardInterrupt  # convert SIGTERM into KeyboardInterrupt
 

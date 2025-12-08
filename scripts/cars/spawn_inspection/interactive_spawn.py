@@ -1,6 +1,11 @@
 import carla
 import time
 
+'''
+This script, combined with spawn_points.txt provides a crude way to inspect spawn points and create/adjust 
+routes for cars to follow. 
+'''
+
 # ----------------------------
 # Configuration
 # ----------------------------
