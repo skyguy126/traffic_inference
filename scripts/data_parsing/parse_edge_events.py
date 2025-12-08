@@ -101,7 +101,7 @@ def write_event_data_to_file(event_data, input_file, out_dir=OUTPUT_DIR):
     
     # Get the input filename without extension
     input_path = Path(input_file)
-    output_filename = Path(input_file).stem.replace("_input", "") + "_EVENTS.json"
+    output_filename = Path(input_file).stem.replace("_input", "") + "_events.json"
     output_path = out_dir / output_filename
     
     # Convert event_data tuples to dictionaries for JSON serialization
