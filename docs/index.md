@@ -115,6 +115,7 @@ Recommended subsections:
 - The edge camera multi-vantage tracking approah uses a hardcoded value for the cosine similarity threshold. This value should be dynamically derived based on current scene and environment conditions to ensure stability between different CARLA maps and vehicles.
 - This project uses deterministic vehicle route mapping to further allow control for result replication.
 - Edge cameras were placed overhead to allow for clean data collection but this is often not represtntative of reality.
+- The simulated vehicles move at a constant velocity and do not stop per usual traffic rules. This is not reflective of reality as most vehicles operate with perodic acceleration and deceleration.
 
 ### **3.1 System Architecture**
 Include a block diagram or pipeline figure.
