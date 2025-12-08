@@ -3,6 +3,8 @@ import argparse
 import os
 from pathlib import Path
 
+OUTPUT_DIR = "out/"
+
 def load_data(path):
     with open(path, "r") as f:
         return json.load(f)
@@ -91,15 +93,15 @@ def print_event_data(event_data):
         print(f"Frame {frame}: Car ID {car_id} | Position {location}")
     print("==========================================\n")
 
-def write_event_data_to_file(event_data, input_file):
-    """Write event data to a JSON file in out/ directory based on input filename."""
+def write_event_data_to_file(event_data, input_file, out_dir=OUTPUT_DIR):
+    """Write event data to a JSON file in the same dir as input file."""
     # Create out/ directory if it doesn't exist
-    out_dir = Path("out")
+    out_dir = Path(input_file).parent
     out_dir.mkdir(exist_ok=True)
     
     # Get the input filename without extension
     input_path = Path(input_file)
-    output_filename = input_path.stem + "_events.json"
+    output_filename = Path(input_file).stem.replace("_input", "") + "_EVENTS.json"
     output_path = out_dir / output_filename
     
     # Convert event_data tuples to dictionaries for JSON serialization
@@ -121,7 +123,7 @@ def write_event_data_to_file(event_data, input_file):
 
 def main():
     parser = argparse.ArgumentParser(description="Parse car detection events from JSON.")
-    parser.add_argument("--file", help="Path to camera input JSON file")
+    parser.add_argument("-f", "--file", help="Path to camera input JSON file")
     args = parser.parse_args()
 
     data = load_data(args.file)
