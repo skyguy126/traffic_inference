@@ -3,27 +3,22 @@ layout: default
 title: "Urban Traﬃc Inference with Perimeter Vision & Encrypted-Camera Side-Channel Extraction"
 ---
 
-# **Urban Traﬃc Inference with Perimeter Vision & Encrypted-Camera Side-Channel Extraction**
-
-*A concise, descriptive title for your project.*
-
-![Project Banner](./assets/img/banner-placeholder.png)  
-<sub>*(Optional: Replace with a conceptual figure or meaningful image.)*</sub>
+# **Urban Traﬃc Inference  Perimeter Vision & Encrypted-Camera Side-Channel Extraction**
 
 ---
 
 ## 👥 **Team**
 
-- **Amy Lee** (siuyuetlee[at]ucla[dot]edu, [GitHub](https://github.com/Harukk246))
-- **Katherine Sohn** (katherinesohn[at]ucla[dot]edu, [GitHub](https://github.com/katherinesohn)) 
-- **Vamsi Eyunni** (veyunni[at]ucla[dot]edu, [GitHub](https://github.com/skyguy126))
+- **Amy Lee** (siuyuetlee@ucla.edu, [GitHub](https://github.com/Harukk246))
+- **Katherine Sohn** (katherinesohn@ucla.edu, [GitHub](https://github.com/katherinesohn)) 
+- **Vamsi Eyunni** (veyunni@ucla.edu, [GitHub](https://github.com/skyguy126))
 
 ---
 
 ## 👥 **Mentors**
 
-- **Gaofeng Dong** (gfdong[at]ucla[dot]edu)
-- **Pragya Sharma** (pragyasharma[at]ucla[dot]edu)
+- **Gaofeng Dong** (gfdong@ucla.edu)
+- **Pragya Sharma** (pragyasharma@ucla.edu)
 
 ---
 
