@@ -3,33 +3,24 @@ from scapy.all import rdpcap
 from scapy.layers.dot11 import Dot11
 import os
 import sys
-import time
+import json
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from pathlib import Path
 import argparse
-import json
+from scipy.signal import medfilt
 
 FPS = 20
 
-# Kept at 2.0 as it successfully detected the car parts
-SIGMA_SENSITIVITY = 2.0 
-
-# Event must be at least 1.5 seconds to count
-# Removes the 0.55s noise
-MIN_DURATION_SECONDS = 1.5
-
-# Wait 2.0 secs before deciding the car is gone
-# Merges split events
-GAP_TOLERANCE_SECONDS = 2.0
-
-# Ignore the first 2 seconds to avoid startup noise
-IGNORE_START_SECONDS = 2.0
+STD_MIN_DURATION_S = 2.0    # Minimum event duration to be considered valid
+GAP_TOLERANCE_S = 1.0       # Max time allowed between spikes before event ends
+IGNORE_START_S = 10.0       # Ignore the first 10 seconds to avoid startup noise
+MIN_BYTES_FLOOR = 100       # Minimum byte threshold to prevent div/0 or noise floor errors
 
 def pcap_to_frame_sizes(pcap_path):
     print(f"Loading: {pcap_path}...")
     try:
-        packets = rdpcap(pcap_path)
+        packets = rdpcap(str(pcap_path))
     except Exception as e:
         print(f"Error: {e}")
         sys.exit(1)
@@ -59,98 +50,165 @@ def pcap_to_frame_sizes(pcap_path):
                 curr_frame_idx = f_idx
                 curr_acc += len(pkt)
             else:
-                curr_acc += len(pkt)
+                curr_acc += len(pkt)       
     sizes.append(curr_acc)
     return np.array(sizes)
 
-def analyze_motion(raw_sizes):
-    # Remove i-frames
-    iframe_threshold = np.percentile(raw_sizes, 95)
-    clean_signal = raw_sizes.copy()
-    clean_signal[clean_signal > iframe_threshold] = np.median(raw_sizes)
-    
-    # Smooth signal (p-frames)
-    window = 20 
-    smoothed = np.convolve(clean_signal, np.ones(window)/window, mode='same')
-    
-    # Calculate threshold based on current noise
-    baseline = np.median(smoothed)
-    std_dev = np.std(smoothed)
-    
-    min_buffer = 200 
-    dynamic_buffer = std_dev * SIGMA_SENSITIVITY
-    actual_buffer = max(dynamic_buffer, min_buffer)
-    car_threshold = baseline + actual_buffer
-    
-    print(f"\nStats Analysis:")
-    print(f" - Baseline Noise: {baseline:.0f} bytes")
-    print(f" - Threshold Set:  > {car_threshold:.0f} bytes")
+def calibrate_noise_profile(signal, sigma_clip=3.0):
+    """
+    Calculates the noise floor statistics (mean, std, max).
+    Iteratively removes outliers (signal spikes) to find the true baseline noise.
+    """
+    noise_samples = signal.copy()
+    for _ in range(3):
+        median = np.median(noise_samples)
+        std = np.std(noise_samples)
+        cutoff = median + (sigma_clip * std) 
+        noise_samples = noise_samples[noise_samples < cutoff]
+        
+    if len(noise_samples) == 0: 
+        return np.median(signal), 100, 100 
+        
+    return np.mean(noise_samples), np.std(noise_samples), np.max(noise_samples)
 
-    # Find events
-    events = []
+def analyze_motion(raw_sizes, use_high_sensitivity=False):
+    """
+    Detecting motion events based on bitrate variance with filtering 
+    and dynamic thresholding. 
+    """
+    if len(raw_sizes) == 0:
+        return [], [], raw_sizes, raw_sizes, [], [], 0
+
+    # Median filter to suppress I-frame spikes
+    clean_signal = medfilt(raw_sizes, kernel_size=5)
+
+    # Select sensitivity
+    if not use_high_sensitivity:
+        # Standard: For cameras with distinct signal-to-noise ratios
+        CLIP_SIGMA = 3.0      
+        TRIGGER_BUFFER = 2.0  
+        SUSTAIN_RATIO = 0.4   
+        FORCE_WINDOW = None   
+        MIN_DURATION_S = STD_MIN_DURATION_S 
+    else:
+        # High Sensitivity: For weak signals or high background noise
+        # Uses tighter trigger buffer and longer duration requirement to filter false positives
+        CLIP_SIGMA = 2.0      
+        TRIGGER_BUFFER = 0.5  
+        SUSTAIN_RATIO = 0.2   
+        FORCE_WINDOW = 10     
+        MIN_DURATION_S = 4.0
+
+    # Determine noise floor excluding the startup period
+    start_idx = int(IGNORE_START_S * FPS)
+    calib_slice = clean_signal[start_idx:] if len(clean_signal) > start_idx else clean_signal
+    
+    noise_mean, noise_std, noise_max = calibrate_noise_profile(calib_slice, sigma_clip=CLIP_SIGMA)
+    
+    # Calculate window size based on signal variance 
+    if FORCE_WINDOW:
+        smooth_window = FORCE_WINDOW
+    else:
+        cv = noise_std / (noise_mean + 1e-5) 
+        if cv > 0.5: smooth_window = 40 
+        elif cv > 0.2: smooth_window = 20 
+        else: smooth_window = 10          
+
+    smoothed = np.convolve(clean_signal, np.ones(smooth_window)/smooth_window, mode='same')
+    
+    # Threshold Calculation
+    calib_smooth = smoothed[start_idx:] if len(smoothed) > start_idx else smoothed
+    s_mean, s_std, s_max = calibrate_noise_profile(calib_smooth, sigma_clip=CLIP_SIGMA)
+    
+    thresh_high = max(s_max + (TRIGGER_BUFFER * s_std), MIN_BYTES_FLOOR)
+    thresh_low = s_mean + (thresh_high - s_mean) * SUSTAIN_RATIO
+    thresh_low = max(thresh_low, MIN_BYTES_FLOOR)
+
+    high_thresholds = [thresh_high] * len(smoothed)
+    low_thresholds = [thresh_low] * len(smoothed)
+
+    valid_events = []
+    rejected_events = [] 
+    
     is_active = False
     start_frame = 0
     gap_counter = 0
     
-    gap_limit_frames = int(GAP_TOLERANCE_SECONDS * FPS)
-    min_frames = int(MIN_DURATION_SECONDS * FPS)
+    gap_limit_frames = int(GAP_TOLERANCE_S * FPS)
+    min_frames = int(MIN_DURATION_S * FPS)
     
-    # Calculate frames to ignore
-    ignore_frames = int(IGNORE_START_SECONDS * FPS)
-    
-    for i, size in enumerate(smoothed):
-        # ignore noise
-        if i < ignore_frames:
-            continue
+    for i, val in enumerate(smoothed):
+        if i < start_idx: continue
 
-        if size > car_threshold:
-            if not is_active:
+        if not is_active:
+            # Trigger condition
+            if val > thresh_high:
                 is_active = True
                 start_frame = i
-            gap_counter = 0
+                gap_counter = 0
         else:
-            if is_active:
+            # Sustain condition
+            if val > thresh_low:
+                gap_counter = 0
+            else:
                 gap_counter += 1
-                # if signal jumps back then merge into one event
+                # End of event detected
                 if gap_counter >= gap_limit_frames:
                     end_frame = i - gap_limit_frames
-                    if (end_frame - start_frame) >= min_frames:
-                        events.append((start_frame, end_frame))
+                    duration_frames = end_frame - start_frame
+                    
+                    # Check event average is above sustain floor
+                    event_avg = np.mean(smoothed[start_frame:end_frame])
+                    is_valid_quality = True
+                    if use_high_sensitivity and event_avg < thresh_low:
+                        is_valid_quality = False
+
+                    if duration_frames >= min_frames and is_valid_quality:
+                        valid_events.append((start_frame, end_frame))
+                    else:
+                        rejected_events.append((start_frame, end_frame, duration_frames/FPS))
                     
                     is_active = False
                     gap_counter = 0
-
+            
     if is_active:
         end_frame = len(smoothed)
-        # check length of event
-        if (end_frame - start_frame) >= min_frames:
-             events.append((start_frame, end_frame))
+        duration_frames = end_frame - start_frame
+        
+        event_avg = np.mean(smoothed[start_frame:end_frame])
+        is_valid_quality = True
+        if use_high_sensitivity and event_avg < thresh_low:
+            is_valid_quality = False
+            
+        if duration_frames >= min_frames and is_valid_quality:
+             valid_events.append((start_frame, end_frame))
                 
-    return events, clean_signal, smoothed, car_threshold
+    return valid_events, rejected_events, clean_signal, smoothed, np.array(high_thresholds), np.array(low_thresholds), smooth_window
 
-def save_events(events, clean_signal, smoothed, threshold, raw_sizes, out_dir, camera_id):
-
+def save_events(events, rejected, clean_signal, smoothed, thresh_high, thresh_low, raw_sizes, out_dir, camera_id, window_used, is_high_sens):
     events_file = f"camera_{camera_id}_events.json"
     events_dir = Path(os.path.join(out_dir, "events"))
-    events_dir.mkdir(parents=True,exist_ok=True)
+    events_dir.mkdir(parents=True, exist_ok=True)
     events_path = Path(os.path.join(events_dir, events_file))
 
     plot_file = f"camera_{camera_id}_plot.png"
     plot_dir = Path(os.path.join(out_dir, "plots"))
-    plot_dir.mkdir(parents=True,exist_ok=True)
+    plot_dir.mkdir(parents=True, exist_ok=True)
     plot_path = os.path.join(plot_dir, plot_file)
 
-    print("\n" + "="*45)
-    print(f"DETECTED EVENTS: {len(events)}")
-    print("="*45)
+    mode_label = "HIGH SENSITIVITY" if is_high_sens else "STANDARD"
+    
+    print("\n" + "="*50)
+    print(f"CAMERA {camera_id}: {len(events)} EVENTS DETECTED")
+    print(f"Mode: {mode_label} | Smoothing Window: {window_used}")
+    print("="*50)
     print(f"{'#':<5} {'START (s)':<12} {'END (s)':<12} {'DURATION':<10}")
-    print("-" * 45)
+    print("-" * 50)
 
-    # Prepare list of event dicts
     event_list = []
     for i, (start, end) in enumerate(events):
-        s_time = start / FPS
-        e_time = end / FPS
+        s_time = (start / FPS) + 1.0 
+        e_time = (end / FPS) + 1.0
         dur = e_time - s_time
         
         start_fmt = f"{s_time:.2f}"
@@ -160,73 +218,73 @@ def save_events(events, clean_signal, smoothed, threshold, raw_sizes, out_dir, c
             start_fmt += f" ({m}:{s:04.1f})"
             
         print(f"{i+1:<5} {start_fmt:<12} {e_time:<12.2f} {dur:<10.2f}s")
+        event_list.append({"event": i+1, "start_s": s_time, "end_s": e_time, "duration": dur})
 
-        # Add to JSON list
-        event_list.append({
-            "event": i+1,
-            "start_s": s_time,
-            "end_s": e_time,
-            "duration": dur
-        })
+    print("="*50)
 
-    print("="*45)
-
-    # Write JSON file
     with open(events_path, "w") as f:
         json.dump(event_list, f, indent=2)
 
     plt.figure(figsize=(12, 8))
-    
+
     plt.subplot(2, 1, 1)
-    plt.plot(raw_sizes, color='lightgray', label='Raw')
-    plt.title("Raw Data")
+    plt.plot(raw_sizes, color='lightgray', label='Raw Frame Sizes')
+    plt.title(f"Camera {camera_id} - Raw Data")
     
     plt.subplot(2, 1, 2)
-    plt.plot(clean_signal, color='lightblue', alpha=0.5, label='P-Frames')
-    plt.plot(smoothed, color='darkblue', linewidth=2, label='Smoothed')
-    plt.axhline(threshold, color='red', linestyle='--', label=f'Threshold')
+    plt.plot(clean_signal, color='lightblue', alpha=0.5, label='Filtered')
+    plt.plot(smoothed, color='darkblue', linewidth=2, label=f'Smoothed (W={window_used})')
+    
+    if len(thresh_high) == len(smoothed):
+        color = 'magenta' if is_high_sens else 'red'
+        plt.plot(thresh_high, color=color, linestyle='--', label='Trigger Threshold')
+        plt.plot(thresh_low, color='orange', linestyle=':', label='Sustain Threshold')
 
     for (start, end) in events:
-        plt.axvspan(start, end, color='green', alpha=0.3)
-        
-    plt.title(f"Motion Detection (Gap Tol: {GAP_TOLERANCE_SECONDS}s, Min Dur: {MIN_DURATION_SECONDS}s)")
-    plt.legend()
-    plt.tight_layout()
+        plt.axvspan(start, end, color='green', alpha=0.3, label='Event')
     
-    plt.savefig(plot_path)
-    print(f"\nVerification plot saved to: {plot_file}")
+    if not is_high_sens:
+        for (start, end, _) in rejected:
+            plt.axvspan(start, end, color='red', alpha=0.1) 
 
+    handles, labels = plt.gca().get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+    plt.legend(by_label.values(), by_label.keys())
+    
+    plt.title(f"Cam {camera_id} Analysis | {mode_label}")
+    plt.tight_layout()
+    plt.savefig(plot_path)
+    plt.close()
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Convert pcap to npy array of frame-level features"
-    )
-    parser.add_argument("pcap_file", help="Path to the pcap file to process. Enter a folder to process all pcaps in that folder.")
-    parser.add_argument("-o", "--output_dir", type=str, help="Specify an output location. Default is the same directory as your input file.")
-
+    parser = argparse.ArgumentParser()
+    parser.add_argument("pcap_file", help="Path to pcap file or folder")
+    parser.add_argument("-o", "--output_dir", type=str)
     args = parser.parse_args()
+    
+    path = Path(args.pcap_file)
+    files = list(path.glob("*.pcap")) if path.is_dir() else [path]
+    out_dir = Path(args.output_dir) if args.output_dir else (path if path.is_dir() else path.parent)
 
-    pcap_path = Path(args.pcap_file)
+    for f in files:
+        try: cam_id = f.stem.split("_")[1].split(".")[0]
+        except: cam_id = f.stem
+        
+        raw_sizes = pcap_to_frame_sizes(str(f))
+        
+        # Standard Mode
+        events, rejected, clean, smoothed, high, low, win = analyze_motion(raw_sizes, use_high_sensitivity=False)
+        is_high_sens = False
+        
+        # Fallback: If no events found, use High Sensitivity Mode except it doesn't really work rn
+        if len(events) == 0:
+            events_r, rejected_r, clean_r, smoothed_r, high_r, low_r, win_r = analyze_motion(raw_sizes, use_high_sensitivity=True)
+            
+            if len(events_r) > 0:
+                events, rejected, clean, smoothed, high, low, win = events_r, rejected_r, clean_r, smoothed_r, high_r, low_r, win_r
+                is_high_sens = True
 
-    if pcap_path.is_dir():
-        output_dir = pcap_path
-        for pcap_file in pcap_path.glob("*.pcap"):
-            camera_id = pcap_file.stem.split("_")[1].split(".")[0]
-
-            raw_sizes = pcap_to_frame_sizes(str(pcap_file))
-            events, clean_signal, smoothed, threshold = analyze_motion(raw_sizes)
-
-            save_events(events, clean_signal, smoothed, threshold, raw_sizes, output_dir, camera_id)
-
-    else:
-        # just one pcap file to process 
-        args.output_dir = str(Path(args.pcap_file).parent)
-        camera_id = Path(args.pcap_file).stem.split("_")[1].split(".")[0]
-
-        raw_sizes = pcap_to_frame_sizes(args.pcap_file)
-        events, clean_signal, smoothed, threshold = analyze_motion(raw_sizes)
-
-        save_events(events, clean_signal, smoothed, threshold, raw_sizes, args.output_dir, camera_id)
+        save_events(events, rejected, clean, smoothed, high, low, raw_sizes, out_dir, cam_id, win, is_high_sens)
 
 if __name__ == "__main__":
     main()
