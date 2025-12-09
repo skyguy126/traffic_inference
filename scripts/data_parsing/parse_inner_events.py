@@ -6,9 +6,9 @@ import sys
 import time
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-
-PCAP_FILE_PATH = r"C:\Users\fasts\Downloads\camera_3.pcap" 
-OUTPUT_DIR = r"C:\Users\fasts\Downloads"
+from pathlib import Path
+import argparse
+import json
 
 FPS = 20
 
@@ -25,8 +25,6 @@ GAP_TOLERANCE_SECONDS = 2.0
 
 # Ignore the first 2 seconds to avoid startup noise
 IGNORE_START_SECONDS = 2.0
-
-if not os.path.exists(OUTPUT_DIR): os.makedirs(OUTPUT_DIR)
 
 def pcap_to_frame_sizes(pcap_path):
     print(f"Loading: {pcap_path}...")
@@ -130,16 +128,26 @@ def analyze_motion(raw_sizes):
                 
     return events, clean_signal, smoothed, car_threshold
 
-def main():
-    raw_sizes = pcap_to_frame_sizes(PCAP_FILE_PATH)
-    events, clean_signal, smoothed, threshold = analyze_motion(raw_sizes)
-    
+def save_events(events, clean_signal, smoothed, threshold, raw_sizes, out_dir, camera_id):
+
+    events_file = f"camera_{camera_id}_events.json"
+    events_dir = Path(os.path.join(out_dir, "events"))
+    events_dir.mkdir(parents=True,exist_ok=True)
+    events_path = Path(os.path.join(events_dir, events_file))
+
+    plot_file = f"camera_{camera_id}_plot.png"
+    plot_dir = Path(os.path.join(out_dir, "plots"))
+    plot_dir.mkdir(parents=True,exist_ok=True)
+    plot_path = os.path.join(plot_dir, plot_file)
+
     print("\n" + "="*45)
     print(f"DETECTED EVENTS: {len(events)}")
     print("="*45)
     print(f"{'#':<5} {'START (s)':<12} {'END (s)':<12} {'DURATION':<10}")
     print("-" * 45)
-    
+
+    # Prepare list of event dicts
+    event_list = []
     for i, (start, end) in enumerate(events):
         s_time = start / FPS
         e_time = end / FPS
@@ -152,8 +160,20 @@ def main():
             start_fmt += f" ({m}:{s:04.1f})"
             
         print(f"{i+1:<5} {start_fmt:<12} {e_time:<12.2f} {dur:<10.2f}s")
-    
+
+        # Add to JSON list
+        event_list.append({
+            "event": i+1,
+            "start_s": s_time,
+            "end_s": e_time,
+            "duration": dur
+        })
+
     print("="*45)
+
+    # Write JSON file
+    with open(events_path, "w") as f:
+        json.dump(event_list, f, indent=2)
 
     plt.figure(figsize=(12, 8))
     
@@ -173,9 +193,40 @@ def main():
     plt.legend()
     plt.tight_layout()
     
-    plot_name = f"plot.png"
-    plt.savefig(os.path.join(OUTPUT_DIR, plot_name))
-    print(f"\nVerification plot saved to: {plot_name}")
+    plt.savefig(plot_path)
+    print(f"\nVerification plot saved to: {plot_file}")
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Convert pcap to npy array of frame-level features"
+    )
+    parser.add_argument("pcap_file", help="Path to the pcap file to process. Enter a folder to process all pcaps in that folder.")
+    parser.add_argument("-o", "--output_dir", type=str, help="Specify an output location. Default is the same directory as your input file.")
+
+    args = parser.parse_args()
+
+    pcap_path = Path(args.pcap_file)
+
+    if pcap_path.is_dir():
+        output_dir = pcap_path
+        for pcap_file in pcap_path.glob("*.pcap"):
+            camera_id = pcap_file.stem.split("_")[1].split(".")[0]
+
+            raw_sizes = pcap_to_frame_sizes(str(pcap_file))
+            events, clean_signal, smoothed, threshold = analyze_motion(raw_sizes)
+
+            save_events(events, clean_signal, smoothed, threshold, raw_sizes, output_dir, camera_id)
+
+    else:
+        # just one pcap file to process 
+        args.output_dir = str(Path(args.pcap_file).parent)
+        camera_id = Path(args.pcap_file).stem.split("_")[1].split(".")[0]
+
+        raw_sizes = pcap_to_frame_sizes(args.pcap_file)
+        events, clean_signal, smoothed, threshold = analyze_motion(raw_sizes)
+
+        save_events(events, clean_signal, smoothed, threshold, raw_sizes, args.output_dir, camera_id)
 
 if __name__ == "__main__":
     main()

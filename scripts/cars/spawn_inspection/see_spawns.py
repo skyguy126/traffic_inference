@@ -2,6 +2,10 @@ import carla
 import random
 import time
 
+'''
+Spawn cars at all possible spawn points on the map. 
+'''
+
 # Connect to CARLA
 client = carla.Client("localhost", 2000)
 client.set_timeout(5.0)

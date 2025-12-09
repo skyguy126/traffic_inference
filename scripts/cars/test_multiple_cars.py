@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-# minimal_spawn_traffic.py
 # Minimal, noisy spawner: vehicles (and optional walkers) with Traffic Manager.
 
 import argparse, random, time, signal, sys
 import carla
 
 '''
-spawns cars around the beltway of town 5. cars enter at the two entry points on the sides. 
+Early sanity tester. spawns cars around the beltway of town 5. cars enter at the two entry points on the sides. 
 '''
 
 def p(s): print(f"[spawn] {s}", flush=True)

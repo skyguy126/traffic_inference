@@ -2,6 +2,7 @@ import json
 import numpy as np
 import pandas as pd
 import os
+import argparse
 
 DT = 0.1 
 CONFIDENCE_THRESHOLD = 0.2
@@ -115,19 +116,19 @@ def load_json_data(filepath, is_edge_file=False):
         for item in raw_data:
             # Timestamp
             ts_val = None
-            for k in ['Enter Time', 'enter_time', 'time', 'timestamp', 'Timestamp']:
+            for k in ['start_s', 'Enter Time', 'enter_time', 'time', 'timestamp', 'Timestamp']:
                 if k in item: ts_val = item[k]; break
             ts = parse_time_str(ts_val)
 
             # Camera ID
             cam_id = "?"
-            for k in ['Cam #', 'Cam', 'cam', 'camera', 'Camera', 'id', 'ID']:
+            for k in ['camera_id', 'Cam #', 'Cam', 'cam', 'camera', 'Camera', 'id', 'ID']:
                 if k in item: cam_id = item[k]; break
             
             # Position
             x, y = None, None
             pos_raw = None
-            for k in ['Position', 'position', 'pos', 'Location']:
+            for k in ['location', 'Position', 'position', 'pos', 'Location']:
                 if k in item: pos_raw = item[k]; break
             
             if pos_raw:
@@ -157,6 +158,7 @@ def load_json_data(filepath, is_edge_file=False):
             valid_count += 1
 
         print(f"[SUCCESS] Loaded {valid_count} valid events.")
+        print(data_list)
         data_list.sort(key=lambda x: x[0])
         return data_list
 
@@ -230,10 +232,17 @@ def run_demo(edge_data, inner_data):
     return pd.DataFrame(OUTPUT_LOG)
 
 if __name__ == "__main__":
-    base_dir = r"C:\Users\fasts\Downloads"
-    inner_path = os.path.join(base_dir, "inner_cameras.json")
-    edge_path = os.path.join(base_dir, "edge_cameras.json")
-    out_file = os.path.join(base_dir, "final_trajectory.csv")
+    parser = argparse.ArgumentParser(
+        description="Run tracking algorithm on a demo scenario."
+    )
+    parser.add_argument("scenario", type=str, help="Name of demo to run")
+
+    args = parser.parse_args()
+    base_path = os.path.join("demos", args.scenario)
+    inner_path = os.path.join(base_path, "all_inner_events.json")
+    edge_path = os.path.join(base_path, "all_edge_events.json")
+
+    out_file = os.path.join(base_path, "final_trajectory.csv")
 
     inner_data = load_json_data(inner_path, is_edge_file=False)
     edge_data = load_json_data(edge_path, is_edge_file=True)

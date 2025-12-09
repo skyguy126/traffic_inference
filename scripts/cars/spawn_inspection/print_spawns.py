@@ -1,6 +1,11 @@
 import carla
 import sys
 
+'''
+Print out all possible spawns to a textfile. This is to aid in making routes. 
+'''
+
+
 def main():
 
     # -------------------------------------------
