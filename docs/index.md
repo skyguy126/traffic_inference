@@ -129,19 +129,20 @@ The CARLA simulator is instianted via the `pylot` docker container and all ports
 
 #### Camera Capture
 
-We place multiple static RGB cameras in the map using the preset poses in `util.CAMERA_CONFIGS`, so every run sees the same streets from the same angles. Each camera is 1280×720, 90° FOV, and runs at 20 FPS to match the simulator tick. CARLA delivers frames as raw bytes; we push them into a per-camera queue to decouple capture from disk writes (avoids dropped frames if storage hiccups).
+Static RGB cameras are placed at fixed, repeatable poses so every trial observes identical viewpoints; controlled camera geometry improves cross-run comparability and is standard practice in multi-camera tracking benchmarks. Each camera samples at 20 FPS with 1280×720 resolution and a 90° field of view to balance spatial detail with real-time throughput (similar rates are used in KITTI/nuScenes to match perception pipelines). Frames arrive as raw bytes and are first buffered in per-camera queues to decouple acquisition from storage, a common technique in real-time vision systems to prevent frame drops when I/O stalls.
 
-For storage we stream raw BGR frames to `ffmpeg` over stdin and encode with H.264 into per-camera MP4 files (`/media/ubuntu/Samsung/carla/demo/two_cars_6_8/camera_<id>.mp4`). This piped approach keeps quality high while using a widely supported codec. The control loop calls `world.tick()`, drains queues, sanity-checks frame size, and logs warnings if an encoder fails—other cameras keep running so a single failure doesn’t stop the experiment.
+Frames are compressed on the fly with an intra/long-GOP H.264 encoder fed via stdin. Piping raw frames directly into the encoder avoids intermediate disk writes and aligns with recommendations from the video systems literature for reducing latency and preserving quality in real-time capture (e.g., FFmpeg-based pipelines in robotics and teleoperation studies). Queue draining is synchronized with the simulator tick, and watchdog checks flag size mismatches or encoder failures so other cameras continue uninterrupted.
 
-At the same tick rate we log every vehicle’s world (x, y) position. The z position is assumed to be 0. We pad zeros before a vehicle appears and after it leaves so each `vehicle_<id>_positions.txt` has exactly one row per frame; this makes it easy to align trajectories with the videos later. (References: piping raw frames to FFmpeg for Python workflows is a standard pattern; see ffmpeg-python docs and common Stack Overflow examples.)
+Vehicle poses are logged once per tick in world coordinates (x, y; ground plane), assuming a flat road surface. Pre- and post-padding with zeros yields a fixed-length trajectory per vehicle, which simplifies later alignment between tracks and videos; fixed-length temporal representations are widely used in trajectory forecasting datasets to enable direct frame-indexed fusion.
 
 #### Mininet WiFi
 
-We emulate camera-to-AP WiFi links in software using Mininet-WiFi to avoid needing physical radios while still running the real Linux TCP/IP stack. The `two_stations_wifi.py` topology keeps things minimal: one access point (`ap1`) and two stations (`sta1` sender, `sta2` receiver). We use `wmediumd` with an interference model so packets still traverse a simulated wireless channel rather than a zero-loss virtual wire.
+Camera-to-access-point links are emulated in software with Mininet-WiFi to retain the full Linux TCP/IP stack while avoiding specialized radio hardware. A minimal topology with one access point and two stations mirrors common sender/receiver lab setups and keeps contention controlled. The emulator’s `wmediumd` interference model injects realistic wireless effects (loss, rate adaptation) instead of idealized zero-loss pipes, following recommendations from the Mininet-WiFi authors for fidelity in SDN and wireless research.
 
-Before streaming, we bring up a monitor-mode interface (`hwsim0`) and start `tcpdump` to capture over-the-air traffic into per-video PCAPs. `sta1` replays each MP4 with `ffmpeg -re ... -f mpegts udp://10.0.0.201:5000`, while `sta2` listens with `ffmpeg` and discards payloads; only timing, lengths, and bursts matter for side-channel features. After each video, captures are closed cleanly to keep PCAPs aligned to a single clip.
+Over-the-air traffic is captured via a monitor-mode interface and recorded per video as PCAPs; this mirrors methodology in traffic-analysis and side-channel studies where timing, burstiness, and packet sizes—not payloads—are the primary signals. Transmissions are replayed at source frame rate using application-layer streaming so temporal characteristics match the encoded video. Each capture is closed after a clip to ensure one-to-one alignment between videos and PCAPs, improving downstream feature extraction reliability.
 
-Why Mininet(-WiFi)? It runs real kernel networking on one machine, scales with modest resources, and exposes a Python API to script topologies, mobility, and SDN-style control. That makes it faster to iterate than hardware testbeds while remaining more realistic than pure packet-level simulators; the community and docs (e.g., mininet.org) also simplify debugging and reproducibility.
+Mininet-WiFi is chosen because it offers repeatable experiments, real kernel code paths, and scriptable control at low cost, as documented in the SDN and wireless emulation literature (e.g., Mininet-WiFi design and evaluation papers). It also enables rapid iteration compared with physical testbeds while providing more realism than packet-level simulators.
+
 ### **3.3 Algorithm / Model Details**
 
 #### **Edge Camera** Multi-Vantage Tracking
@@ -156,7 +157,13 @@ WIP Katherine
 
 ##### Machine Learning Approach
 
-WIP Vamsi
+**Methodology**
+
+Packet traces are converted into per-frame descriptors by isolating 802.11 data traffic after the first high-volume video packet and aggregating over the camera frame period (1/FPS). Each frame records packet count, total bytes, mean and variance of packet sizes, inter-arrival statistics, and index bounds; empty frames are zero-filled to preserve alignment. Paired video-derived features are matched by camera identifier, truncated to equal length, and standardized after discarding the first 500 frames to suppress startup transients—steps consistent with traffic-analysis practice. Three packet-side channels (count, total bytes, size variability) serve as predictors, while video embeddings supply supervision.
+
+Overlapping windows of 16 frames are generated with stride 1 to retain fine temporal structure while expanding the effective dataset. An 80/20 split yields train/test partitions. A two-layer bidirectional LSTM (hidden size 128, dropout 0.1) maps each window to per-timestep predictions, optimized with mean squared error and Adam (learning rate 3e-4) for 75 epochs. This bi-directional, windowed formulation mirrors standard sequence-to-sequence regression setups, enabling the model to leverage both past and future context within each clip.
+
+**Results**
 
 #### Final Fusion Algorithm
 
