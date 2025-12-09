@@ -88,6 +88,15 @@ If successful, this project could influence the design of future smart-city sens
 ### **1.5 Challenges**  
 List the main technical, practical, or methodological challenges.
 
+Implementing the proposed system presents several challenges. 
+
+- Data Fusion: The system must reliably associate events from two very different sources. Encrypted traffic cues are noisy and lack direct identifiers. Determining which vehicle caused it is non-trivial, especially if multiple vehicles are in range. We mitigate this with assumptions listed in the below section and by probabilistic association (using distance-based soft assignments in the Kalman filter). 
+- Timing and Synchronization: The perimeter and interior data streams must be synchronized to within a fraction of a second. We run CARLA in synchronous mode and timestamp all events, but in the real world network delays could desynchronize signals.
+- Kalman Filter Tuning: We maintain separate noise models for edge vs. interior observations (edge cameras give precise location, interior side-channel gives coarse info). Tuning these noise covariances is challenging. If interior data is weighted too high, tracking will jitter; too low and interior cues might be ignored.
+- Multi-Target Scalability: As vehicle count grows, the association problem (which car triggered an interior event) becomes harder. An optimal assignment (we considered the Hungarian algorithm) is needed when multiple events and vehicles coincide. Ensuring the tracker doesn’t mistakenly merge or swap tracks under crowded conditions is difficult.
+- Appearance Variability: Our cross-camera re-identification uses visual appearance embeddings to maintain a global vehicle identification across different edge cameras. Variations in lighting or similar-looking cars can lead to ID switches. We address this by using a cosine similarity threshold, but choosing a robust threshold for all conditions is non-trivial.
+- Privacy and Ethics: On a non-technical front, using side-channel data raises ethical questions: even if we aren’t decrypting video, inferring activity from someone’s camera feed could be sensitive. We must consider how to deploy such a system transparently and with consent.
+
 ### **1.6 Metrics of Success**  
 What are the specific, measurable criteria for evaluating your project?
 
