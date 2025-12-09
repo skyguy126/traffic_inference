@@ -6,9 +6,6 @@ import json
 import sys
 from pathlib import Path
 
-# Add scripts directory to path to import util
-sys.path.insert(0, str(Path('scripts')))
-
 def load_trajectory_data(csv_path):
     """Load trajectory CSV file"""
     if not csv_path.exists():
@@ -121,7 +118,5 @@ def main():
     plot_events(final_events)
     finalize_plot(sc, args.demo_name, demo_path)
     
-    return 0
-
 if __name__ == '__main__':
-    exit(main())
+    main()
