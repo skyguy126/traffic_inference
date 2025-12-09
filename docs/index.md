@@ -158,7 +158,7 @@ Throughout this project, we make the following assumptions
 - Inner cameras were placed overhead to allow for cleaner data collection, but this is often not representative of reality. Robustness to camera placement should be explored in future work. 
 
 ### **3.1 System Architecture**
-Include a block diagram or pipeline figure.
+![System Pipeline](./assets/img/system_flowchart.png)  
 
 ### **3.2 Data Pipeline**
 Explain how data is collected, processed, and used.
@@ -166,6 +166,16 @@ Explain how data is collected, processed, and used.
 #### CARLA Setup
 
 The CARLA simulator is instianted via the `pylot` docker container and all ports are exposed on the host. The simulator is run within a docker container to ensure reproducability and easy sharing of dependencies. All ephermal code and data collection is executed on the host itself.
+
+#### Car Control & Scenario Generation
+
+Vehicle trajectories are generated deterministically to ensure reproducible experiments across trials. The system employs a multi-point route structure where each vehicle follows spawn → interior → destination waypoints, with the spawn and destination points constrained to lie outside the monitoring zone (perimeter) and the interior waypoints required to pass through it. This design guarantees that every vehicle both enters and exits the region of interest, enabling comprehensive evaluation of entry detection, interior tracking, and exit confirmation. For ease of developent, all waypoints in routes are selected from the list of legitimate spawn points specified by CARLA, since these represent locations that are well-aligned with road lanes, minimizing undesired car behaviors. 
+
+Each vehicle is controlled by a CARLA BehaviorAgent, a rule-based local planner that wraps the Traffic Manager's low-level steering/throttle control with higher-level waypoint-following logic. Since the version of CARLA's BehaviorAgent does not provide an end method as later versions do, we detect reaching a destination via catching a queueing error that the BehaviorAgent triggers when the car approaches its destination. This ad hoc solution was found to be extremely deterministic and producing useful behavior for our project's standards.  
+
+For multi-vehicle scenarios, any combination of pre-defined routes can be specified when running the `multi_car_route.sh` script. Colors are deterministically assigned from a restricted set consisting of high contrast colors. 
+
+Storage of route files (written by the `one_car_route.py` with the appropriate flags, or manually) provides a certain reproducibility guarantee, limited by the variation in behavior due to the slow synchronous ticks. CARLA's BehaviorAgent may make slightly different decisions in steering aggression between runs, but car paths throughout the world are deterministic between runs and across machines. 
 
 #### Camera Capture
 
@@ -193,7 +203,7 @@ We run two prerecorded edge videos (cameras 4 and 5) frame-by-frame. Each frame 
 
 ##### Deterministic Approach
 
-WIP Katherine
+WIP Amy
 
 ##### Machine Learning Approach
 
@@ -207,7 +217,7 @@ Overlapping windows of 16 frames are generated with stride 1 to retain fine temp
 
 #### Final Fusion Algorithm
 
-WIP Katherine/Amy 
+WIP Amy
 
 ### **3.4 Hardware / Software Implementation**
 Explain equipment, libraries, or frameworks.
