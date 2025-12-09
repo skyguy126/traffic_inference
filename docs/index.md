@@ -129,6 +129,46 @@ Our project builds upon and intersects multiple research threads, including mult
 In summary, while we draw on ideas from related work in multi-camera tracking, side-channel analysis, and sensor fusion, our system addresses a unique combination of these problems that has not been fully explored in the literature. This positions our work as a stepping stone toward more integrated, privacy-conscious urban sensing solutions.
 
 ---
+# TODO FIX REFERENCES
+
+```
+[Apthorpe17] N. Apthorpe, D. Reisman, and N. Feamster (2017). “A Smart Home is No Castle: Privacy Vulnerabilities of Encrypted IoT Traffic.” Proc. of DAT Workshop. (Demonstrated that encrypted smart camera traffic patterns reveal user activities, e.g. Nest Cam traffic spikes on motion
+ndss-symposium.org
+.)
+
+[Bewley16] A. Bewley et al. (2016). “Simple Online and Realtime Tracking.” Proc. IEEE ICIP. (Introduced the SORT algorithm combining Kalman Filter and Hungarian assignment for multi-object tracking
+researchgate.net
+.)
+
+[Dosovitskiy17] A. Dosovitskiy et al. (2017). “CARLA: An Open Urban Driving Simulator.” Proc. 1st Annual Conf. on Robot Learning (CoRL). (Introduced the CARLA simulator used for our data generation and evaluation.)
+
+[Ji18] X. Ji et al. (2018). “User Presence Inference via Encrypted Traffic of Wireless Camera in Smart Homes.” Sec. and Communication Networks, vol. 2018. (Showed that encrypted camera streams can reveal occupancy and daily patterns of users
+ftc.gov
+.)
+
+[Li16] H. Li et al. (2016). “Side-Channel Information Leakage of Encrypted Video Stream in Video Surveillance Systems.” Proc. IEEE INFOCOM 2016. (Demonstrated that different activities produce distinguishable encrypted traffic patterns, posing privacy risks in surveillance
+ftc.gov
+.)
+
+[Tang19] Z. Tang et al. (2019). “CityFlow: A City-Scale Benchmark for Multi-Target Multi-Camera Vehicle Tracking and Re-Identification.” Proc. IEEE/CVF CVPR. (Provided a large-scale multi-camera vehicle tracking dataset; highlights state-of-art in visual vehicle re-identification
+arxiv.org
+.)
+
+[Tian21] X. Tian et al. (2021). “Robust Privacy-Preserving Motion Detection and Object Tracking in Encrypted Streaming Video.” IEEE TIFS. (Proposed a method to detect and track objects by analyzing encrypted video bitstreams, using compressed-domain features and Kalman filtering
+researchgate.net
+.)
+
+Visor19 R. Shokri et al. (2019). “Visor: Privacy-Preserving Video Analytics as a Cloud Service.” Microsoft Research Tech. Report. (Proposed padding video streams at the source to prevent bitrate-based information leakage
+microsoft.com
+.)
+
+[EFF] Electronic Frontier Foundation – Street-Level Surveillance Project. “Automated License Plate Readers.” (n.d.). (Describes ALPR technology and its use in tracking vehicles, as well as privacy implications
+sls.eff.org
+sls.eff.org
+.)
+```
+
+---
 
 # **3. Technical Approach**
 
