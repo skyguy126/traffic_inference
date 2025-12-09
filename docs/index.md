@@ -38,6 +38,8 @@ Provide a short paragraph (4–6 sentences) summarizing:
 
 This should be a standalone “TL;DR” of your project.
 
+Modern cities rely on surveillance for traffic management, but continuous tracking of vehicles through urban zones remains challenging due to privacy and coverage gaps. We address this problem by fusing perimeter vision (entry/exit cameras) with interior encrypted-video side-channels (wireless traffic data) to infer vehicle trajectories without direct observation. Our approach integrates computer vision for vehicle detection at the zone perimeter with analysis of encrypted camera WiFi traffic to signal motion inside. We develop a novel, multi-target tracking system to maintain estimated vehicle position with spatial and temporal stability. In evaluation using the CARLA simulator, the system tracks multiple cars through a virtual city, matching ground truth trajectories within acceptable error. These results demonstrate the feasibility of “seeing without seeing", achieving situational awareness via indirect sensing, and highlight the broader potential of side-channel data to augment urban traffic monitoring while mitigating privacy concerns.
+
 ---
 
 ## 📑 **Slides**
