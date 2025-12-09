@@ -83,6 +83,8 @@ Our approach is novel in that it treats encrypted camera traffic as a sensor for
 ### **1.4 Potential Impact**  
 If successful, what technical or broader impact could this project have?
 
+If successful, this project could influence the design of future smart-city sensing infrastructure. It suggests that useful situational awareness can be obtained without blanket CCTV coverage. Cities could leverage privately owned cameras as privacy-preserving sensors, only tapping metadata like traffic rates rather than live video feeds. This could alleviate the need for installing cameras everywhere or allow monitoring in sensitive areas where video is restricted. Technically, the approach opens up a new avenue in multimodal tracking, fusing conventional sensors with unconventional side-channels. The broader impact includes informing privacy policy: by highlighting that encrypted camera streams still convey significant information, our work may encourage stricter standards (e.g. mandatory traffic shaping) or conversely, demonstrate a constructive use-case of the side-channel (improving public services without additional surveillance). In domains beyond traffic, the concept could be applied to track occupancy in smart buildings or public spaces using encrypted IoT data, balancing utility and privacy. Finally, our system contributes to embedded and IoT research by showcasing inference under resource constraints; using minimal additional hardware (just a WiFi sniffer and a few cameras) to achieve a complex sensing task.
+
 ### **1.5 Challenges**  
 List the main technical, practical, or methodological challenges.
 
