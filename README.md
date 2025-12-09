@@ -46,7 +46,7 @@ cd scripts/dev
 
 # Camera Locations
 
-![map](./map.png)
+![map](./docs/assets/img/map.png)
 
 ```
 # Refer CAMERA_CONFIGS in util.py

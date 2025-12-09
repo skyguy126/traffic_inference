@@ -24,3 +24,4 @@ global_label_test_videos/
 scripts/camera_configs.txt
 **/out
 **/tmp
+**.DS_Store
