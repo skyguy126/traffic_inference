@@ -430,33 +430,35 @@ We now present a discussion of each demo scenario, its significance, and failure
   <em>Kalman Filter (Left) vs. Graph Optimization (Right)</em>
 </p>
 
+<div align="center">
 | Car ID | Metric | Kalman (Real-time) | Graph (Batch) |
 | :--- | :--- | :--- | :--- |
 | **1** | **Total Path Length** | 721.73 m | 721.73 m |
 | | **RMSE (Accuracy)** | 8.62 m | 10.20 m |
 | | **Error %** | **1.19%** | **1.41%** |
 | | **Max Drift** | 18.30 m | 18.30 m |
+</div>
 
 In this simple scenario, both approaches successfully detect all events in order, with no missing events, no added events, and no misclassified events. The quantitative metrics show comparable performance with error rates hovering near 1% of the total path length. In the Kalman Filter approach, the car's trajectory overshoots, but is corrected back to the event location with a correct classification. This scenario is mostly a sanity check of our system, since with only one car in the area, identification of anonymous events is trivial. This scenario also shows global ID event tracking, as the car is not re-assigned a new identy upon exiting at the opposite edge camera. 
 
 ### Demo 2: One Car, Moderate Route
-<div style="display: flex; justify-content: space-between; gap: 10px;">
-    <figure style="text-align: center; margin: 0;">
-    <img src="./assets/img/one_car_6_KF.png" alt="one_car_2_KF" style="width: 100%; height: auto;">
-    <figcaption>Kalman Filter</figcaption>
-  </figure>
-  <figure style="text-align: center; margin: 0;">
-    <img src="./assets/img/one_car_6_graph.png" alt="one_car_2_graph" style="width: 100%; height: auto;">
-    <figcaption>Graph Optimization</figcaption>
-  </figure>
-</div>
 
+<p float="left" align="middle">
+  <img src="./assets/img/one_car_6_KF.png" width="49%" />
+  <img src="./assets/img/one_car_6_graph.png" width="49%" /> 
+</p>
+<p align="center">
+  <em>Kalman Filter (Left) vs. Graph Optimization (Right)</em>
+</p>
+
+<div align="center">
 | Car ID | Metric | Kalman (Real-time) | Graph (Batch) |
 | :--- | :--- | :--- | :--- |
 | **1** | **Total Path Length** | 714.25 m | 714.25 m |
 | | **RMSE (Accuracy)** | 9.83 m | 4.41 m |
 | | **Error %** | **1.38%** | **0.62%** |
 | | **Max Drift** | 23.56 m | 6.92 m |
+</div>
 
 This scenario varies from the first in that the car exits from the same edge camera that it entered from. In addition, the route becomes slightly more complex, introducing turns and crossing the same camera (camera 1) at two different times. The Graph Optimization leverages future constraints to interpolate turns, cutting the error percentage by more than half (0.62% vs 1.38%) and keeping the maximum drift within single digits.
 
@@ -474,6 +476,7 @@ This scenario varies from the first in that the car exits from the same edge cam
   </figure>
 </div>
 
+<div align="center">
 | Car ID | Metric | Kalman (Real-time) | Graph (Batch) |
 | :--- | :--- | :--- | :--- |
 | **1** | **Total Path Length** | 1222.73 m | 1222.73 m |
@@ -484,6 +487,7 @@ This scenario varies from the first in that the car exits from the same edge cam
 | | **RMSE** | 193.55 m | 36.89 m |
 | | **Error %** | **27.10%** | **5.17%** |
 | | **Max Drift** | 460.57 m | 103.59 m |
+</div>
 
 This scenario introduces a second car. Both cars enter the town within a few seconds of each other from different edge cameras, and traverse paths inside the town. They near the center of the map at similar times, providing a test of spatial ambiguity. For Car 2, the Kalman Filter effectively failed, drifting **460 meters** off-course (a 27% error rate) due to sensor ambiguity. The Graph Optimization recovered the trajectory using global consistency, maintaining a **5.17%** error rate despite the difficult conditions. This demonstrates the batch method's superior ability to recover from "lost" states.
 
@@ -501,6 +505,7 @@ This scenario introduces a second car. Both cars enter the town within a few sec
   </figure>
 </div>
 
+<div align="center">
 | Car ID | Metric | Kalman (Real-time) | Graph (Batch) |
 | :--- | :--- | :--- | :--- |
 | **1** | **Total Path Length** | 714.18 m | 714.18 m |
@@ -511,6 +516,7 @@ This scenario introduces a second car. Both cars enter the town within a few sec
 | | **RMSE** | 4.69 m | 4.68 m |
 | | **Error %** | **0.56%** | **0.55%** |
 | | **Max Drift** | 6.92 m | 6.91 m |
+</div>
 
 This scenario demonstrates the dependence of our algorithms on event data quality. Both algorithms achieved sub-1% error rates, confirming that when data quality is high, the lightweight Kalman Filter is just as effective as the computationally heavy Graph Optimization.
 
@@ -527,7 +533,8 @@ This scenario demonstrates the dependence of our algorithms on event data qualit
     <figcaption>Graph Optimization</figcaption>
   </figure>
 </div>
-        
+
+<div align="center">
 | Car ID | Metric | Kalman (Real-time) | Graph (Batch) |
 | :--- | :--- | :--- | :--- |
 | **1** | **Total Path Length** | 1222.69 m | 1222.69 m |
@@ -542,6 +549,7 @@ This scenario demonstrates the dependence of our algorithms on event data qualit
 | | **RMSE** | 4.83 m | 4.37 m |
 | | **Error %** | **0.22%** | **0.20%** |
 | | **Max Drift** | 7.49 m | 7.50 m |
+</div>
         
 The three-car scenario contained our only error in edge camera data, where car ID `3` incorrectly had three edge events, with a second, later exit being recorded at camera 4 after its correct exit at cmaera 5. Both algorithms incorrectly selected this faulty exit. 
 
