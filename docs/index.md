@@ -384,8 +384,7 @@ Raw camera frames are piped directly into individual `ffmpeg` processes, which e
 
 CARLA supplies synchronized, configurable sensor data; `ffmpeg` transforms those data streams into compressed video frames; Mininet Wi-Fi emulates wireless link characteristics while capturing ground-truth network traces; and the Docker-based PyLot environment provides the reproducible substrate tying simulation, encoding, and emulation together for controlled, measurable experiments.
 
-TODO:
-Amy - Pandas? just what part you used
+
 Katherine - ortools
 
 ### **3.6 Key Design Decisions & Rationale**
@@ -413,8 +412,8 @@ We evalate our system across five scenarios:
 
 ### Inner Camera Event Data
 As discussed before, our algorithms depend heavily upon the quality of the data provided to them. Below are our results in inner event data accuracy: 
-| Scenario | Ground Truth | True Positives (Matches) | False Negatives (Missing) | False Positives (Ghosts) |
-| :--- | :---: | :---: | :---: | :---: |
+| **Scenario**| **Ground Truth**| **True Positives (Matches)**| **False Negatives (Missing)**| **False Positives (Ghosts)**|
+|------------------------|------------------------|------------------------|------------------------|------------------------|
 | `one_car_2` | 4 | 4 | 0 | 1 |
 | `one_car_6` | 8 | 6 | 2 | 1 |
 | `two_cars_6_cyan_5_black` | 14 | 14 | 0 | 0 |
