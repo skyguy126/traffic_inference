@@ -127,31 +127,33 @@ Use figures generously:
 
 Recommended subsections:
 
-### **3.0 Assumptions & Proposed Solutions**
+### **3.1 Assumptions & Proposed Solutions**
 
-Throughout this project, we make the following assumptions
+Throughout this project, we make the following assumptions:
+
 - Traffic is sparse: at any given time, only zero or one car occupies any camera's field of view. This pushes the edge case where multiple cars pass a single camera at one time, and two events must be detected, out of scope. In future work, this assumption can be lifted by inspecting the difference in encrypted network traffic when one car versus multiple cars pass. For example, if the disturbance size is found to be dependent upon the number of cars in the camera's view, this can be probabilistically added into the algorithm to trigger two anonymous events instead of one. 
 - No two cameras' fields of view overlap: no two cameras will pick up the same event. This assumption is reasonable because we are looking for coarse traffic tracking. Future work could be robust to this by inferring based on camera proximity and field of view to throw out events that are likely duplicates. 
 - Each camera transmits only to its associated access point, with no other traffic on that link; therefore all WiFi traffic observed on that network originates from the camera. In future work, this assumption could be relaxed by making the simulated WiFi network more robust, such as positioning packet sniffers between cameras and using triangulation to determine the camera from which the packets originate from. This would also decrease the deployment costs of such a system by decreasing the number of packet sniffers needed.  
-- The WiFi sniffer is positioned so it is within range of only a single camera/access-point pair at any given time, preventing capture of unrelated over-the-air traffic. This assumption is made to control our system, but future work could look to detect and filter out such noise. 
-- The multi-vantage identification system generates embeddings solely from vehicle appearance without incorporating temporal or spatial metadata. It performs reliably when vehicle colors differ significantly, but error rates may increase when vehicles have similar appearances. In our project, we use only one model of car (Toyota Prius), selected due to its medium size and prevalence in the real world. Cars are differentiated solely on a color basis, but future work could use license plate detection or other differentating features to more reliably track cars at edge nodes. 
+- The WiFi sniffer is positioned so it is within range of only a single camera/access-point pair at any given time, preventing capture of unrelated over-the-air traffic. This assumption is made to control our system, but future work could look to detect and filter out such noise.
+- We assume minimal or no network level packet loss, whereas in reality packet losses are quite common, especially video streams over UDP.
+- The multi-vantage identification system generates embeddings solely from vehicle appearance without incorporating temporal or spatial metadata. It performs reliably when vehicle colors differ, but error rates may increase when vehicles have similar appearances. In our project, we use only one model of car (Toyota Prius), selected due to its medium size and prevalence in the real world. Cars are differentiated solely on a color basis, but future work could use license plate detection or other differentating features to more reliably track cars at edge nodes. 
 - All simulations are run in CARLA's synchronous mode. This was found to be necessary in order to synchronize the cars' movement with camera capture, so that videos would correctly show the car moving across the camera in "real time". While we were not able to investigate this requirement deeply due to time constraints, we hypothesize that this is necessary due to system constraints, as camera capture takes significant time compared to an asynchronous tick. The main benefit of asynchronous mode is more robust car movement with respect to acceleration, deceleration, and turning, but we decided that we could safely forego these features for our purposes. This is because for both edge and inner cameras, we are simply detecting a car's presence in a camera's view, and more precise aspects about its movement (other than a single instantaneous velocity) are not included in calculations. 
 - All cars ignore traffic lights, and move at a relatively constant velocity. This assumption could be relaxed by introducing further uncertainty in calculations. In the future, actual data of traffic light patterns could even be integrated as further "ground-truth" data to improve tracking results.
 - The edge camera multi-vantage tracking approah uses a hardcoded value for the cosine similarity threshold. This value should be dynamically derived based on current scene and environment conditions to ensure stability between different CARLA maps and vehicles.
 - This project uses deterministic vehicle route mapping to further allow control for result replication.
 - Inner cameras were placed overhead to allow for cleaner data collection, but this is often not representative of reality. Robustness to camera placement should be explored in future work. 
 
-### **3.1 System Architecture**
+### **3.2 System Architecture**
 ![System Pipeline](./assets/img/system_pipeline.png)
 
 The system architecture is organized into three major subsystems: edge-camera perception, inner-camera wireless side-channel sensing, and a central fusion/inference module. Edge cameras handle visual detection, tracking, and global ID assignment, while inner cameras contribute anonymized event streams derived from encrypted Wi-Fi traffic. A final inference layer—implemented either with a Kalman+Hungarian tracker or a global graph-based optimizer. The final layer integrates these heterogeneous event sources into coherent vehicle position inferences.
 
-### **3.2 Data Pipeline**
+### **3.3 Data Pipeline**
 Explain how data is collected, processed, and used.
 
 #### CARLA Setup
 
-The CARLA simulator is instianted via the `pylot` docker container and all ports are exposed on the host. The simulator is run within a docker container to ensure reproducability and easy sharing of dependencies. All ephermal code and data collection is executed on the host itself.
+The CARLA simulator is instianted via the [pylot docker container](https://github.com/erdos-project/pylot) and all ports are exposed on the host. The simulator is run within a docker container to ensure reproducability and easy sharing of dependencies. All ephermal code and data collection is executed on the host itself.
 
 #### Car Control & Scenario Generation
 
@@ -165,7 +167,7 @@ Storage of route files (written by the `one_car_route.py` with the appropriate f
 
 #### Camera Capture
 
-Static RGB cameras are placed at fixed, repeatable poses so every trial observes identical viewpoints; controlled camera geometry improves cross-run comparability and is standard practice in multi-camera tracking benchmarks. Each camera samples at 20 FPS with 1280×720 resolution and a 90° field of view to balance spatial detail with real-time throughput (similar rates are used in KITTI/nuScenes to match perception pipelines). Frames arrive as raw bytes and are first buffered in per-camera queues to decouple acquisition from storage, a common technique in real-time vision systems to prevent frame drops when I/O stalls.
+Static RGB cameras are placed at fixed, repeatable poses so every trial observes identical viewpoints; controlled camera geometry improves cross-run comparability and is standard practice in multi-camera tracking benchmarks. Each camera samples at 20 FPS with 1280×720 resolution and a 90° field of view to balance spatial detail with real-time throughput (similar rates are used in KITTI/nuScenes to match perception pipelines **ADD CITATION**). Frames arrive as raw bytes and are first buffered in per-camera queues to decouple acquisition from storage, a common technique in real-time vision systems to prevent frame drops when I/O stalls.
 
 Frames are compressed on the fly with an intra/long-GOP H.264 encoder fed via stdin. Piping raw frames directly into the encoder avoids intermediate disk writes and aligns with recommendations from the video systems literature for reducing latency and preserving quality in real-time capture (e.g., FFmpeg-based pipelines in robotics and teleoperation studies). Queue draining is synchronized with the simulator tick, and watchdog checks flag size mismatches or encoder failures so other cameras continue uninterrupted.
 
@@ -173,13 +175,13 @@ Vehicle poses are logged once per tick in world coordinates (x, y; ground plane)
 
 #### Mininet WiFi
 
-Camera-to-access-point links are emulated in software with Mininet-WiFi to retain the full Linux TCP/IP stack while avoiding specialized radio hardware. A minimal topology with one access point and two stations mirrors common sender/receiver lab setups and keeps contention controlled. The emulator’s `wmediumd` interference model injects realistic wireless effects (loss, rate adaptation) instead of idealized zero-loss pipes, following recommendations from the Mininet-WiFi authors for fidelity in SDN and wireless research.
+Camera-to-access-point links are emulated in software with [Mininet-WiFi](https://mininet-wifi.github.io/) to retain the full Linux TCP/IP stack while avoiding specialized radio hardware. A minimal topology with one access point and two stations mirrors common sender/receiver lab setups and keeps contention controlled. The emulator’s `wmediumd` interference model injects realistic wireless effects (loss, rate adaptation) instead of idealized zero-loss pipes, following recommendations from the Mininet-WiFi authors for fidelity in SDN and wireless research.
 
 Over-the-air traffic is captured via a monitor-mode interface and recorded per video as PCAPs; this mirrors methodology in traffic-analysis and side-channel studies where timing, burstiness, and packet sizes—not payloads—are the primary signals. Transmissions are replayed at source frame rate using application-layer streaming so temporal characteristics match the encoded video. Each capture is closed after a clip to ensure one-to-one alignment between videos and PCAPs, improving downstream feature extraction reliability.
 
 Mininet-WiFi is chosen because it offers repeatable experiments, real kernel code paths, and scriptable control at low cost, as documented in the SDN and wireless emulation literature (e.g., Mininet-WiFi design and evaluation papers). It also enables rapid iteration compared with physical testbeds while providing more realism than packet-level simulators.
 
-### **3.3 Algorithm / Model Details**
+### **3.4 Algorithm / Model Details**
 
 #### **Edge Camera** Multi-Vantage Tracking
 
@@ -205,7 +207,7 @@ Events are parsed on a per-camera basis using the methods described above, then 
 
 We compare two approaches that perform inference upon the final lists of edge and inner events. 
 
-#### Kalman Filter + Hungarian Algorithm
+**Kalman Filter + Hungarian Algorithm**
 
 To integrate data from the edge cameras with the anonymous location data from the inner cameras, we designed a tracking algorithm using a Kalman filter and softmax-based data association. We modeled the vehicle state as a four-dimensional vector representing position and velocity in the 2D plane, assuming a constant velocity motion model. As sensing differ between the two types of cameras, we assigned separate measurement noise covariance matrices. The edge cameras provide ground-truth localization so they are assigned a low noise variance, whereas the inner cameras are subject to more noise and estimation errors and are assigned a higher variance. This ensures the filter trusts the edge data significantly more while still allowing the inner data to smooth the trajectory and update velocity estimates throughout the blind zone.
 
@@ -213,7 +215,7 @@ To associate inner camera events to existing vehicle tracks, we use a softmax-we
 
 Track management is handled through the edge-camera IDs. When an edge camera detects a car ID that does not exist in the current state, a new Kalman filter instance is initialized at that location. Then, to prevent premature track deletion due to sensor noise near the boundaries, we implement a robust exit logic. A track is only deleted if the vehicle is at the extreme north or south limits within the lane width and has been active for a minimum duration of 10 frames. This ensures reliable termination of tracks without sacrificing continuity.
 
-**The high-level pseudocode is thus:**
+***The high-level pseudocode is thus:***
 
 ```
 # sorted by timestamp
@@ -342,30 +344,51 @@ In this approach, we solve tracking by formulating a global graph-based Mixed In
   After solving, an inner event is assigned a car ID if it lies on that car’s optimal path; unassigned events are labeled noise.
 
 #### Comparison of Approaches
-In summary, our system implements two distinct algorithms for associating inner sensor events with vehicle identities:  
-- (1) a Kalman Filter with Hungarian algorithm for per-event greedy matching, and  
-- (2) a global graph-based MIP approach for jointly optimal trajectory assignment.
 
-**The Kalman+Hungarian algorithm** is computationally efficient and intuitive, updating each vehicle's belief state frame by frame and making assignment decisions based on predicted positions. We expect it to perform well in straightforward, low-density settings, but it may struggle with ambiguous or noisy events that would benefit from considering global context.
+In summary, our system implements two distinct algorithms for associating inner sensor events with vehicle identities:
+
+1. A Kalman Filter with Hungarian algorithm for per-event greedy matching. 
+1. A global graph-based MIP approach for jointly optimal trajectory assignment.
+
+**The Kalman + Hungarian algorithm** is computationally efficient and intuitive, updating each vehicle's belief state frame by frame and making assignment decisions based on predicted positions. We expect it to perform well in straightforward, low-density settings, but it may struggle with ambiguous or noisy events that would benefit from considering global context.
 
 **The global graph-based MIP approach** considers all possible associations and constraints simultaneously, optimizing for the globally most consistent set of trajectories and noise rejections. This should make it more robust to ambiguous or missing detections, at the cost of higher computational complexity.
 
-Between the two, the **Kalman+Hungarian approach is much more strongly dependent on the quality of event data**. Because it makes decisions based only on the current filter state and immediate event observations, degraded event quality (such as dropped, noisy, or out-of-order events) can rapidly undermine tracking accuracy. The MIP approach, conversely, is able to use global context to compensate for some level of poor or missing data, making it more robust to event imperfections.
+Between the two, the **Kalman + Hungarian algorithm approach is much more strongly dependent on the quality of event data**. Because it makes decisions based only on the current filter state and immediate event observations, degraded event quality (such as dropped, noisy, or out-of-order events) can rapidly undermine tracking accuracy. The MIP approach, conversely, is able to use global context to compensate for some level of poor or missing data, making it more robust to event imperfections.
 
-Finally, there is a key distinction in **inference timing**:  
+Finally, there is a key distinction in *inference timing*:  
 - The Kalman+Hungarian algorithm can operate truly in real time, updating tracks and making assignments continuously as events arrive.
 - The global graph-based method, in contrast, requires collecting a block or window of data before executing its joint optimization, thus always “looking back” over a period rather than making truly immediate decisions.
 This tradeoff—between immediate, local inference and delayed, globally optimal assignment—will be an important factor in practical system design.
 
-### **3.4 Hardware / Software Implementation**
+### **3.5 Hardware / Software Implementation**
 Explain equipment, libraries, or frameworks.
 
-TODO: 
-Vamsi - CARLA, ffmpeg (only the part we used), mininet
+#### Docker/PyLot Development Environment
+
+`create_dev_cont.sh` and `run_cont.sh` provision a GPU-enabled, privileged, host-networked container with X11 passthrough, enabling CARLA/pylot to render while leveraging hardware acceleration. Containerization standardizes dependencies and runtime behavior across simulation and networking experiments.
+
+#### CARLA and Camera Capture
+
+The CARLA simulation serves as a controlled environment in which multiple RGB sensors are instantiated from blueprints with fixed resolution, field of view, and frame rate. In `spawn_world5_cameras.py`, each camera is spawned at prescribed poses, streams raw BGRA frames into per-camera queues, and feeds those frames to downstream processing without display overhead.
+
+#### FFmpeg (HEVC) Encoding
+
+Raw camera frames are piped directly into individual `ffmpeg` processes, which encode to H.264 MP4 (`yuv420p`) at the simulation frame rate. This design decouples simulation ticks from disk I/O and preserves per-camera isolation. The same script records vehicle trajectories per frame, padding temporal gaps so position logs align with the total number of simulation ticks.
+
+#### Mininet Wi‑Fi Emulation
+
+`two_stations_wifi.py` constructs a minimal Wi‑Fi topology (two stations, one WPA2 access point) with interference modeling to approximate over‑the‑air behavior. One station streams local MP4s over UDP/MPEG‑TS via `ffmpeg`, the other runs an `ffmpeg` sink, and `tcpdump` captures 802.11 traffic to PCAPs for subsequent analysis—providing a reproducible network path for video delivery experiments.
+
+#### End-to-End Pipeline Perspective
+
+CARLA supplies synchronized, configurable sensor data; `ffmpeg` transforms those data streams into compressed video frames; Mininet Wi-Fi emulates wireless link characteristics while capturing ground-truth network traces; and the Docker-based PyLot environment provides the reproducible substrate tying simulation, encoding, and emulation together for controlled, measurable experiments.
+
+TODO:
 Amy - Pandas? just what part you used
 Katherine - ortools
 
-### **3.5 Key Design Decisions & Rationale**
+### **3.6 Key Design Decisions & Rationale**
 Describe the main design decisions you made.
 
 We chose CARLA's preset town 5 because of its inherent structure as a perimeter and inner areas, with two specific entry points at the east and west sides of of the town. This constrains our environment nicely, while still providing multiple entry points to confirm that global tracking works. The inner structure is mostly grid-like, lending itself to easy spacing of cameras with non-overlapping fields of view. 
