@@ -409,7 +409,7 @@ As discussed before, our algorithms depend heavily upon the quality of the data 
 Edge camera data was highly reliable, with the only error being a single ghost event in the three car scenario incorrectly indicating that car 3 exited from camera 4 after it had already exited at camera 5. 
 
 ### Fusion Algorithm
-To evaluate the performance trade-offs between the Kalman Filter and the Graph Optimization, we employed three core metrics: Root Mean Square Error (RMSE) for accuracy, Maximum Error for robustness, and Mean Jerk for trajectory smoothness.
+To evaluate the performance trade-offs between the Kalman Filter and the Graph Optimization, we employed three core metrics: Root Mean Square Error (RMSE) for accuracy, Maximum Error for robustness, and Max Drift for stability.
 
 To find the error, we established a frame ID for all three data sets (Ground Truth, Kalman Filter, and Graph Optimization) by mapping the floating-point timestamps to a 20 FPS rate and applying a frame offset to the Ground Truth data. The Root Mean Square Error (RMSE) is then computed as the direct Euclidean distance between the estimated coordinate and the true coordinate at that exact Frame ID. Importantly, to ensure a fair comparison between the high frequency Kalman Filter (10 Hz) and the Graph Optimization output, we subsampled the Kalman predictions to align with the exact timestamps of the Graph Optimization nodes. This ensures that our smoothness metric evaluates the trajectory decisions at identical moments in time, rather than simply penalizing the real-time filter for its higher sampling rate. 
 
