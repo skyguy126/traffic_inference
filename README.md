@@ -59,7 +59,10 @@ To enable or disable cameras, comment and uncomment lines in `./scripts/util.py`
 
 In this section you will spawn one or more vehicles with either custom or predefined routes. The predefined routes are provided for convinience and quick reproducability.
 
+1. `./scripts/multi_car_route <route ID #1> <route ID #2> <route ID #N>`
+    - Route IDs are defined in [this spreadsheet](https://docs.google.com/spreadsheets/d/1RwLaQ0M5xuA0Guw3VsfJDIJVlorXgBcg69KmpaDnyVU/edit?gid=65310523#gid=65310523).
 
+The script will spawn and start vehicle movement, and will automatically exit once all vehicles have reached their destination waypoint.
 
 # WARNING
 Do not run the above command (in step 1) on Vamsi's desktop. Instead use `./run_cont.sh`.
