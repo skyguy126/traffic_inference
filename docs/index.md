@@ -369,6 +369,7 @@ This tradeoff—between immediate, local inference and delayed, globally optimal
 ### **3.4 Hardware / Software Implementation**
 Explain equipment, libraries, or frameworks.
 
+TODO: 
 Vamsi - CARLA, ffmpeg (only the part we used), mininet
 Amy - Pandas? just what part you used
 Katherine - ortools
@@ -549,23 +550,56 @@ Wang, Xinchao & Turetken, Engin & Fleuret, Francois & Fua, Pascal. (2014). Track
 
 # **7. Supplementary Material**
 
-## **7.a. Datasets**
+## **7.a. Software**
 
-Describe each dataset:
-* Source and URL
-* Data format
-* Preprocessing steps
-* Labeling/annotation efforts
+### External Libraries & Models
+* **CARLA Simulator** – Open-source urban driving simulator for scenario generation and data collection
+  * [CARLA Documentation](https://carla.readthedocs.io/)
+* **YOLOv8** – Object detection for vehicle identification in edge camera footage
+  * [Ultralytics YOLOv8](https://github.com/ultralytics/ultralytics)
+* **ByteTrack** – Multi-object tracking across video frames (edge camera tracking)
+* **OSNet (Object-Semantic Network)** – Lightweight CNN for vehicle re-identification embeddings
+  * [Torchreid](https://github.com/KaiyangZhou/deep-person-reid)
+* **Mininet-WiFi** – Network emulation for realistic WiFi packet capture
+  * [Mininet-WiFi Docs](https://mininet-wifi.github.io/)
+* **Scapy** – Packet parsing and PCAP file reading for encrypted traffic analysis
+  * [Scapy Documentation](https://scapy.readthedocs.io/)
+* **Google OR-Tools** – Mixed Integer Programming (MIP) solver for graph-based optimization
+  * [OR-Tools Documentation](https://developers.google.com/optimization/install)
+* **PyTorch & TorchVision** – Deep learning framework for neural network models
+* **NumPy, Pandas, SciPy** – Numerical computing and signal processing
+  * SciPy `medfilt` used for median filtering of encrypted bitrate signals
+* **Matplotlib** – Data visualization for trajectory plots
 
-Include your internal dataset if you collected one.
+### Internal Modules
+* **`M202A_algorithm2.py`** – Kalman Filter-based tracking with Hungarian assignment
+  * Vehicle state estimation (position, velocity)
+  * Multi-camera data association via softmax-weighted Mahalanobis distance
+  * Track initialization and termination logic
+* **`graph_algorithm.py`** – Global graph-based MIP optimization for trajectory inference
+  * Constructs flow network of events and constraints
+  * Solves multi-commodity flow problem to assign anonymous events to vehicle IDs
+  * Identifies and labels noisy/unexplained events
+* **`plot_final_trajectory.py`** – Trajectory visualization and result aggregation
+  * Subplot generation for per-vehicle trajectory analysis
+  * Colorbar rendering with timestamp information
+  * Event overlay on trajectory plots
+* **`scripts/util.py`** – CARLA utility functions
+  * Vehicle spawning, camera configuration, world transformation helpers
+* **`scripts/process_edge_camera_video.py`** – Edge camera video processing pipeline
+  * YOLO detection, ByteTrack tracking, OSNet embedding extraction
+  * Cross-camera appearance matching and global ID assignment
+* **`scripts/data_parsing/parse_edge_events.py`** – Edge camera event extraction
+  * Vehicle detection and tracking from edge camera videos
+  * Global ID assignment across multiple edge cameras
+  * Event logging with timestamps and camera locations
+* **`scripts/data_parsing/parse_inner_events.py`** – PCAP-to-event conversion
+  * Packet aggregation to 20 Hz bitrate signal
+  * Median filtering and dual-threshold hysteresis for motion detection
 
-
-## **7.b. Software**
-
-List:
-* External libraries or models
-* Internal modules you wrote
-* Links to repos or documentation
+### External Tools & Services
+* **FFmpeg** – Video encoding (H.264) and frame capture
+* **Docker** – Container environment for reproducible CARLA deployment
 
 ---
 
