@@ -486,17 +486,15 @@ This scenario varies from the first in that the car exits from the same edge cam
 
 <div style="display: flex; justify-content: space-between; gap: 10px;">
     <figure style="text-align: center; margin: 0;">
-    <img src="./assets/img/two_cars_6_green_8_black_KF.png" alt="one_car_2_KF" style="width: 100%; height: auto;">
-    <figcaption>Kalman Filter</figcaption>
-</div>
-<div>
-  </figure>
-  <figure style="text-align: center; margin: 0;">
-    <img src="./assets/img/two_cars_6_green_8_black_graph.png" alt="one_car_2_graph" style="width: 100%; height: auto;">
-    <figcaption>Graph Optimization</figcaption>
-  </figure>
-</div>
-    
+        <img src="./assets/img/two_cars_6_green_8_black_KF.png" alt="one_car_2_KF" style="width: 100%; height: auto;">
+        <figcaption>Kalman Filter</figcaption>
+    </figure>
+    <figure style="text-align: center; margin: 0;">
+        <img src="./assets/img/two_cars_6_green_8_black_graph.png" alt="one_car_2_graph" style="width: 100%; height: auto;">
+        <figcaption>Graph Optimization</figcaption>
+    </figure>
+</div> 
+
 | Car ID | Metric | Kalman | Graph |
 | :--- | :--- | :--- | :--- |
 | **1** | **Total Path Length** | 1222.73 m | 1222.73 m |
