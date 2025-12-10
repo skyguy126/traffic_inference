@@ -116,7 +116,6 @@ Throughout this project, we make the following assumptions:
 The system architecture is organized into three major subsystems: edge-camera perception, inner-camera wireless side-channel sensing, and a central fusion/inference module. Edge cameras handle visual detection, tracking, and global ID assignment, while inner cameras contribute anonymized event streams derived from encrypted Wi-Fi traffic. A final inference layer—implemented either with a Kalman+Hungarian tracker or a global graph-based optimizer. The final layer integrates these heterogeneous event sources into coherent vehicle position inferences.
 
 ### **3.3 Data Pipeline**
-Explain how data is collected, processed, and used.
 
 #### CARLA Setup
 
@@ -186,7 +185,7 @@ To associate inner camera events to existing vehicle tracks, we use a softmax-we
 
 Track management is handled through the edge-camera IDs. When an edge camera detects a car ID that does not exist in the current state, a new Kalman filter instance is initialized at that location. Then, to prevent premature track deletion due to sensor noise near the boundaries, we implement a robust exit logic. A track is only deleted if the vehicle is at the extreme north or south limits within the lane width and has been active for a minimum duration of 10 frames. This ensures reliable termination of tracks without sacrificing continuity.
 
-***The high-level pseudocode is thus:***
+*The high-level pseudocode is thus:*
 
 ```
 # sorted by timestamp
@@ -430,7 +429,6 @@ Due to the asynchronous nature of the ground truth data, which recorded valid ve
 
 ---
 
-
 ## Test Results
 We now present a discussion of each demo scenario, its significance, and failures.
 
@@ -558,16 +556,7 @@ This scenario demonstrates the dependence of our algorithms on event data qualit
 The three-car scenario contained our only error in edge camera data, where one car incorrectly had three edge events, with a second, later exit being recorded at camera 4 after its correct exit at camera 5. Both algorithms incorrectly selected this faulty exit. This resulted in the high maximum drift we see. However, like Demo 2, the Graph Optimization was able to recover the correct trajectory and maintain a low error despite the conditions. 
 
 ---
-# **5. Discussion & Conclusions**
-
-Synthesize the main insights from your work.
-
-- What worked well and why?  
-- What didn’t work and why?  
-- What limitations remain?  
-- What would you explore next if you had more time?  
-
-This should synthesize—not merely repeat—your results.
+# **5. Discussion**
 
 This project successfully validated the core feasibility of fusing heterogeneous data sources for urban vehicle tracking. By demonstrating that encrypted 802.11 Wi-Fi traffic can be combined with sparse video data, we proved that vehicle trajectories can be reliably reconstructed even in challenging "blind" urban zones. Overall, the results highlight a core trade-off between latency and accuracy, as well as the strengths and weaknesses of different fusion strategies.
 
@@ -577,9 +566,13 @@ The singular edge event ghost error we saw could be combated by algorithmically 
 
 Our initial assumption was that all cameras would share a similar noise baseline but we found out that some cameras (9 and 19) experienced a noise floor nearly doubled to other cameras, causing standard thresholds to trigger false positives constantly. In an attempt to capture less events we made the settings stricter but that caused the algorithm to detect no events. With more time we could solve this issue by obtaining more data and find an average settings for these cameras rather than custom tuning, or if figuring out where this huge noise might be coming from. Our data currently focuses on bitrate, but future iterations could incorporate things like packet size variance or arrival time to distinguish signal patterns and improve the model. 
 
+Overall, this project confirms that combining encrypted Wi-Fi traffic with sparse video can yield reliable cross-zone vehicle tracking, provided the reconstruction algorithm is capable of enforcing global consistency. With stronger environmental modeling and richer signal features, this fusion framework could scale into a practical, city-wide blind-zone tracking system.
+
+# **6. Future Work**
+
 Future development with the tracking fusion algorithm could involve adding additional cost and rules to the cost function that is currently just `mahalanobis_distance` function. Adding environmental constraints to the grid and simulating the CARLA environment would also enable path-feasibility rules, ensuring that a detection event would only be valid if the vehicle could have realistically moved to that location from the last state. 
 
-Overall, this project confirms that combining encrypted Wi-Fi traffic with sparse video can yield reliable cross-zone vehicle tracking, provided the reconstruction algorithm is capable of enforcing global consistency. With stronger environmental modeling and richer signal features, this fusion framework could scale into a practical, city-wide blind-zone tracking system.
+TODO: VAMSI ADD MORE DETAILS ABOUT FUTURE WORK
 
 ---
 
