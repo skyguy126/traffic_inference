@@ -436,36 +436,56 @@ As discussed before, our algorithms depend heavily upon the quality of the data 
 ### Edge Camera Event Data
 Edge camera data was highly reliable, with the only error being a single ghost event in the three car scenario incorrectly indicating that car 3 exited from camera 4 after it had already exited at camera 5. 
 
+### Fusion Algorithm
+To evaluate the performance trade-offs between the Kalman Filter and the Graph Optimization, we employed three core metrics: Root Mean Square Error (RMSE) for accuracy, Maximum Error for robustness, and Mean Jerk for trajectory smoothness.
+
+Due to the asynchronous nature of the ground truth data, which recorded valid vehicle coordinates without synchronized timestamps, a direct temporal comparison was not feasible. Instead, we used a spatial alignment approach and computed the error by determining the Euclidean distance from each estimated coordinate to its closest point on the ground truth path. Importantly, to ensure a fair comparison between the high frequency Kalman Filter (10 Hz) and the Graph Optimization output, we subsampled the Kalman predictions to align with the exact timestamps of the Graph Optimization nodes. This ensures that our smoothness metric evaluates the trajectory decisions at identical moments in time, rather than simply penalizing the real-time filter for its higher sampling rate. 
+
 ## Test Results
 We now present a discussion of each demo scenario, its significance, and failures.
 
 ### Demo 1: One Car, Simple Route
-<div style="display: flex; justify-content: space-between; gap: 10px;">
-    <figure style="text-align: center; margin: 0;">
-    <img src="./assets/img/one_car_2_KF.png" alt="one_car_2_KF" style="width: 100%; height: auto;">
-    <figcaption>Kalman Filter</figcaption>
-  </figure>
-  <figure style="text-align: center; margin: 0;">
-    <img src="./assets/img/one_car_2_graph.png" alt="one_car_2_graph" style="width: 100%; height: auto;">
-    <figcaption>Graph Optimization</figcaption>
-  </figure>
+<p float="left" align="middle">
+  <img src="./assets/img/one_car_2_KF.png" width="49%" />
+  <img src="./assets/img/one_car_2_graph.png" width="49%" /> 
+</p>
+<p align="center">
+  <em>Kalman Filter (Left) vs. Graph Optimization (Right)</em>
+</p>
+
+<div align="center">
+    
+| Car ID | Metric | Kalman | Graph |
+| :--- | :--- | :--- | :--- |
+| **1** | **Total Path Length** | 721.73 m | 721.73 m |
+| | **RMSE (Accuracy)** | 8.62 m | 10.20 m |
+| | **Error %** | **1.19%** | **1.41%** |
+| | **Max Drift** | 18.30 m | 18.30 m |
 </div>
 
-In this simple scenario, both approaches successfully detect all events in order, with no missing events, no added events, and no misclassified events. In the Kalman Filter approach, the car's trajectory overshoots, but is corrected back to the event location with a correct classification. This scenario is mostly a sanity check of our system, since with only one car in the area, identification of anonymous events is trivial. This scenario also shows global ID event tracking, as the car is not re-assigned a new identy upon exiting at the opposite edge camera. 
+In this simple scenario, both approaches successfully detect all events in order, with no missing events, no added events, and no misclassified events. The quantitative metrics show comparable performance with error rates hovering near 1% of the total path length (1.19% for Kalman vs. 1.41% for Graph). This scenario is mostly a sanity check of our system, since with only one car in the area, identification of anonymous events is trivial. This scenario also shows global ID event tracking, as the car is not re-assigned a new identy upon exiting at the opposite edge camera. However, this test confirms that for simple, linear paths with sparse traffic, the Kalman Filter provides sufficient precision without the computational cost of the Graph optimization.
 
 ### Demo 2: One Car, Moderate Route
-<div style="display: flex; justify-content: space-between; gap: 10px;">
-    <figure style="text-align: center; margin: 0;">
-    <img src="./assets/img/one_car_6_KF.png" alt="one_car_2_KF" style="width: 100%; height: auto;">
-    <figcaption>Kalman Filter</figcaption>
-  </figure>
-  <figure style="text-align: center; margin: 0;">
-    <img src="./assets/img/one_car_6_graph.png" alt="one_car_2_graph" style="width: 100%; height: auto;">
-    <figcaption>Graph Optimization</figcaption>
-  </figure>
+
+<p float="left" align="middle">
+  <img src="./assets/img/one_car_6_KF.png" width="49%" />
+  <img src="./assets/img/one_car_6_graph.png" width="49%" /> 
+</p>
+<p align="center">
+  <em>Kalman Filter (Left) vs. Graph Optimization (Right)</em>
+</p>
+
+<div align="center">
+    
+| Car ID | Metric | Kalman (Real-time) | Graph (Batch) |
+| :--- | :--- | :--- | :--- |
+| **1** | **Total Path Length** | 714.25 m | 714.25 m |
+| | **RMSE (Accuracy)** | 9.83 m | 4.41 m |
+| | **Error %** | **1.38%** | **0.62%** |
+| | **Max Drift** | 23.56 m | 6.92 m |
 </div>
 
-This scenario varies from the first in that the car exits from the same edge camera that it entered from. In addition, the route becomes slightly more complex, introducing turns and crossing the same camera (camera 1) at two different times.  
+This scenario varies from the first in that the car exits from the same edge camera that it entered from. In addition, the route becomes slightly more complex, introducing turns and crossing the same camera (camera 1) at two different times. The Kalman Filter struggled with this maneuver; its prediction model drifted linearly, resulting in a Max Drift of 23.56m . The Graph Optimization leverages future constraints to interpolate turns, cutting the error percentage by more than half (0.62% vs 1.38%) and keeping the maximum drift within single digits.
 
 ### Demo 3: Two Cars, Spatially Sparse
 <div style="display: flex; justify-content: space-between; gap: 10px;">
@@ -481,7 +501,21 @@ This scenario varies from the first in that the car exits from the same edge cam
   </figure>
 </div>
 
-This scenario introduces a second car. Both cars enter the town within a few seconds of each other from different edge cameras, and traverse paths inside the town. They near the center of the map at similar times, providing a test of spatial ambiguity. 
+<div align="center">
+    
+| Car ID | Metric | Kalman (Real-time) | Graph (Batch) |
+| :--- | :--- | :--- | :--- |
+| **1** | **Total Path Length** | 1222.73 m | 1222.73 m |
+| | **RMSE** | 115.88 m | 77.06 m |
+| | **Error %** | **9.48%** | **6.30%** |
+| | **Max Drift** | 264.66 m | 208.36 m |
+| **2** | **Total Path Length** | 714.28 m | 714.28 m |
+| | **RMSE** | 193.55 m | 36.89 m |
+| | **Error %** | **27.10%** | **5.17%** |
+| | **Max Drift** | 460.57 m | 103.59 m |
+</div>
+
+This scenario introduces a second car. Both cars enter the town within a few seconds of each other from different edge cameras, and traverse paths inside the town. They near the center of the map at similar times, providing a test of spatial ambiguity. Due to error in the inner camera event where camera 9 miscalculatead 3 additional events, both algorithms predicted an event at the wrong location, resulting in the high Max Drift. However, the Graph Optimization method was able to recover the trajectory using global consistency, maintaining a 5.17% error rate despite the difficult conditions. This demonstrates the method's superior ability to recover from noisy data.
 
 ### Demo 4: Two Cars, Temporally Sparse
 <div style="display: flex; justify-content: space-between; gap: 10px;">
@@ -497,7 +531,21 @@ This scenario introduces a second car. Both cars enter the town within a few sec
   </figure>
 </div>
 
-This scenario demonstrates the dependence of our algorithms on event data quality. [TODO: AMY]
+<div align="center">
+    
+| Car ID | Metric | Kalman (Real-time) | Graph (Batch) |
+| :--- | :--- | :--- | :--- |
+| **1** | **Total Path Length** | 714.18 m | 714.18 m |
+| | **RMSE** | 4.92 m | 4.94 m |
+| | **Error %** | **0.69%** | **0.69%** |
+| | **Max Drift** | 7.99 m | 7.99 m |
+| **2** | **Total Path Length** | 843.86 m | 843.86 m |
+| | **RMSE** | 4.69 m | 4.68 m |
+| | **Error %** | **0.56%** | **0.55%** |
+| | **Max Drift** | 6.92 m | 6.91 m |
+</div>
+
+This scenario demonstrates the dependence of our algorithms on event data quality. In this scenario, we were able to obtain accurate inner camera events. As a result, both algorithms achieved minimal error rates, confirming that when data quality is high, the Kalman Filter can be just as effective as Graph Optimization.
 
 ### Demo 5: Three Cars
 <div style="display: flex; justify-content: space-between; gap: 10px;">
@@ -513,10 +561,27 @@ This scenario demonstrates the dependence of our algorithms on event data qualit
   </figure>
 </div>
 
-The three-car scenario contained our only error in edge camera data, where car ID `3` incorrectly had three edge events, with a second, later exit being recorded at camera 4 after its correct exit at cmaera 5. Both algorithms incorrectly selected this faulty exit. 
+<div align="center">
+    
+| Car ID | Metric | Kalman (Real-time) | Graph (Batch) |
+| :--- | :--- | :--- | :--- |
+| **1** | **Total Path Length** | 1222.69 m | 1222.69 m |
+| | **RMSE** | 264.84 m | 20.67 m |
+| | **Error %** | **21.66%** | **1.69%** |
+| | **Max Drift** | 574.16 m | 49.76 m |
+| **2** | **Total Path Length** | 714.25 m | 714.25 m |
+| | **RMSE** | 57.60 m | 4.41 m |
+| | **Error %** | **8.06%** | **0.62%** |
+| | **Max Drift** | 152.02 m | 6.92 m |
+| **3** | **Total Path Length** | 2164.59 m | 2164.59 m |
+| | **RMSE** | 4.83 m | 4.37 m |
+| | **Error %** | **0.22%** | **0.20%** |
+| | **Max Drift** | 7.49 m | 7.50 m |
+</div>
+        
+The three-car scenario contained our only error in edge camera data, where one car incorrectly had three edge events, with a second, later exit being recorded at camera 4 after its correct exit at camera 5. Both algorithms incorrectly selected this faulty exit. This resulted in the high maximum drift we see. However, like Demo 2, the Graph Optimization was able to recover the correct trajectory and maintain a low error despite the conditions. 
 
 ---
-
 # **5. Discussion & Conclusions**
 
 Synthesize the main insights from your work.
