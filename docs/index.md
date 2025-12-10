@@ -409,23 +409,23 @@ We evalate our system across five scenarios:
 Our event error rates are as follows: 
 | Scenario | Ground Truth | True Positives (Matches) | False Negatives (Missing) | False Positives (Ghosts) |
 | :--- | :---: | :---: | :---: | :---: |
-| **Two Cars 65** | 14 | 14 | 0 | 0 |
-| **ONE CAR 6** | 8 | 6 | 2 | 1 |
-| **One Car 2** | 4 | 4 | 0 | 0 |
-| **THREE CARS** | 24 | 23 | 1 | 1 |
-| **TWO CAR 68** | 13 | 12 | 1 | 3 |
-| **TOTAL** | **63** | **59** | **4** | **5** |
+| `one_car_2` | 4 | 4 | 0 | 1 |
+| `one_car_6 | 8 | 6 | 2 | 1 |
+| `two_cars_6_cyan_5_black` | 14 | 14 | 0 | 0 |
+| `two_cars_6_green_8_black`| 13 | 12 | 1 | 3 |
+| `three_cars_1_cyan_6_purple_8_white` | 24 | 23 | 1 | 1 |
+| **TOTAL** | **63** | **59** | **4** | **6** |
 
 ### Performance Metrics
 
-* **Precision:** $P = \frac{TP}{TP + FP} = \frac{59}{59 + 5} = 92.19\%$
-  * *We are **92.19%** confident that a car is actually present when an event is detected.*
+* **Precision:** $P = \frac{TP}{TP + FP} = \frac{59}{59 + 6} = 90.77\%$
+  * *We are **90.8%** confident that a car is actually present when an event is detected.*
 
 * **Recall:** $R = \frac{TP}{TP + FN} = \frac{59}{59 + 4} = 93.65\%$
-  * *The system successfully captures **93.7%** of all actual vehicle traffic.*
+  * *The system successfully captures **93.65%** of all actual vehicle traffic.*
 
-* **F1 Score:** $F1 = 2 \times \frac{P \times R}{P + R} = 92.91\%$
-  * *The system demonstrates **92.91%** overall reliability.*
+* **F1 Score:** $F1 = 2 \times \frac{P \times R}{P + R} = 92.19\%$
+  * *The system demonstrates **92.19%** overall reliability.*
 
 We present a discussion of each demo scenario, its significance, and discuss our findings.
 
