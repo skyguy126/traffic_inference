@@ -50,7 +50,16 @@ Now we will proceed to spawn cameras to emulate both edge and inner video feeds.
 
 To enable or disable cameras, comment and uncomment lines in `./scripts/util.py` within the `CAMERA_CONFIGS` array. By default all cameras are enabled.
 
-1. Modify the input and output paths defined in `./scripts/spawn_world5_cameras.py`. The 
+1. Modify the input and output paths defined in `./scripts/spawn_world5_cameras.py`. The MP4 recordings will be saved accordingly.
+1. Start camera capture: `python ./scripts/spawn_world5_cameras.py`.
+    - Note that this will transition the CARLA simulator to sync mode until the simulator is restarted.
+1. To end camera capture press `Ctrl-C`.
+
+### Spawn Vehicles
+
+In this section you will spawn one or more vehicles with either custom or predefined routes. The predefined routes are provided for convinience and quick reproducability.
+
+
 
 # WARNING
 Do not run the above command (in step 1) on Vamsi's desktop. Instead use `./run_cont.sh`.
