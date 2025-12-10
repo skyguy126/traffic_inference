@@ -14,14 +14,17 @@
 
 ### Dependencies
 
-The following dependencies are prerequsite to running any software for this project though the specific setup instructions are out of scope of this guide. Please refer to the below URLs for the most up-to-date setup guides from the respective project owners. As setup directions vary widely between different machines we recommend referring to the original dependency guides.
+The following dependencies are prerequsite to running any software for this project though the specific setup instructions are out of scope of this guide. Please refer to the below hyperlinks for the most up-to-date setup guides. As setup directions vary widely between different machines, we recommend referring to the project specific setup guides.
 
 - Operating System: `Ubuntu 22.04.5 LTS`
 - CUDA GPU with latest drivers. (i.e. `Driver Version: 550.107.02, CUDA Version: 12.4`)
 - Python `3.7.17` running on the host machine. (Note: we suggest using [pyenv](https://github.com/pyenv/pyenv))
+    - Install necessary dependencies with: `pip install -r ./requirements.txt`
 - [pylot](https://github.com/erdos-project/pylot)
     - This README assumes a functional deployment of the pylot docker image with full X11 forwarding and GPU passthrough to the host machine. Common caveats include pulling the `carla` Python library from the container's version of the [CARLA simulator](https://carla.org/) and installing it on the host. You may attempt to use `scritps/dev/create_dev_cont.sh` and `scripts/dev/run_cont.sh` but machine specific setup steps will vary.
 - [Mininet Wi-Fi](https://mininet-wifi.github.io/)
+    - We recommend using the pre-made VirtualBox image and forward VM port 22 to host port 2222 for easy `ssh` access.
+- ffmpeg: `sudo apt install ffmpeg`
 
 ### Start the CARLA Simulator
 
@@ -36,6 +39,18 @@ The following dependencies are prerequsite to running any software for this proj
 ```
 
 2. Start CARLA inside the docker container `./scripts/run_simulator.sh`
+1. Load the map used in the writeup: `python ./scripts/dev/load_town5.py`
+    - This will load the world used in the project writeup and move the observer camera to a birds eye view.
+
+### Start Camera Capture
+
+Now we will proceed to spawn cameras to emulate both edge and inner video feeds. Refer to the following diagram for hardcoded camera positions used in the writeup.
+
+![map](./docs/assets/img/map.png)
+
+To enable or disable cameras, comment and uncomment lines in `./scripts/util.py` within the `CAMERA_CONFIGS` array. By default all cameras are enabled.
+
+1. Modify the input and output paths defined in `./scripts/spawn_world5_cameras.py`. The 
 
 # WARNING
 Do not run the above command (in step 1) on Vamsi's desktop. Instead use `./run_cont.sh`.
