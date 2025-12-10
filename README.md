@@ -39,6 +39,7 @@ The following dependencies are prerequsite to running any software for this proj
 ```
 
 2. Start CARLA inside the docker container `./scripts/run_simulator.sh`
+    - The aforementioned scripts also forward all ports to the host for easier development.
 1. Load the map used in the writeup: `python ./scripts/dev/load_town5.py`
     - This will load the world used in the project writeup and move the observer camera to a birds eye view.
 
@@ -64,104 +65,62 @@ In this section you will spawn one or more vehicles with either custom or predef
 
 The script will spawn and start vehicle movement, and will automatically exit once all vehicles have reached their destination waypoint.
 
-# WARNING
-Do not run the above command (in step 1) on Vamsi's desktop. Instead use `./run_cont.sh`.
+### Pre-Process Edge Camera Video
 
-2. Setup and run the CARLA simulator:
+At this point this guide will assume you have a set of MP4 files with recordings of car(s) driving through the city in CARLA. *Camera 4* and *Camera 5* are currently hardcoded to act as "edge cameras". Therefore we will process these two MP4 files as edge camera video to obtain a dataset containing various parameters such as assigning vehicles a global identifcation number through the multi-vantage tracking system.
 
-```bash
-cd scripts/dev
-. ./start_carla.sh
-```
-This script also sets the python path (solves behaviorAgent not found error) and loads the town 5 map. 
-Safe to re-run in order to reload town 5. 
+1. Modify hardcoded paths in `./scripts/process_edge_camera_video.py` as needed and launch the processing script with `python ./scripts/process_edge_camera_video.py`.
+     - This script will output `.json` files in the output directory you specified.
 
-2. Run a one-car scenario
-```bash
-cd scripts/cars
-python one_car_route.py
-```
-Run with the `--help` flag for more options. 
+### Generate Inner Camera Network Data (MP4 -> PCAP)
 
-OR, Run a multi-car scenario
-```bash
-cd scripts/cars
-./multi_car_route.sh <route id 1> <route id 2>
-```
-Parameters are route ids, separated by spaces. Colors are randomly assigned. 
+1. Start the Mininet Wi-Fi VM.
+1. Clone this repository to `/home/wifi`.
+1. Copy over inner camera MP4s from the host to the mininet VM. Tools such as `scp` may come in handly.
+     - Remmeber that only `camera_4.mp4`, `camera_5.mp4`, and `camera_overhead.mp4` are edge/debug videos. All other camera IDs are inner camera video files. These are the files you will need to copy to the mininet VM.
+1. Within the mininet VM, modify the paths as needed; defined at the top of `./scripts/mininet/two_stations_wifi.py`.
+1. Run the mininet virtual wifi setup: `sudo python ./scripts/mininet/two_stations_wifi.py`.
+    - The script will initialize the network architecture then enter a CLI. Type `exit` to allow the script to continue processing video files.
+    - The script will then automatically loop through each inner camera video file and stream it between stations. The sniffer will capture network packets and save them to the `./scripts/mininet/pcaps` folder.
+1. Copy the `./scripts/mininet/pcaps` folder from the mininet VM to the host for further analysis.
 
-3. Run the cleanup script to stop CARLA: 
-```bash
-cd scripts/dev
-./cleanup.sh
-```
-## Notes
-- `tmux` may be useful for opening multiple windows in the docker container. 
+### Build Dataset
 
-# Camera Locations
+TODO: Katherine to explain how to combine `.json` files edge camera processing and `.pcap` files from mininet.
 
-![map](./docs/assets/img/map.png)
+### Perform Inference
 
-```
-# Refer CAMERA_CONFIGS in util.py
-```
+TODO: Katherine / Amy
 
-## Start the CALRA simulator (on Vamsi's desktop)
+### Generate Visuals
 
-```bash
-cd ~/M202A-CARLA/scripts
-./run_cont.sh
-# At this point you should be on a shell within the docker container.
-./scripts/run_simulator.sh
-```
+TODO: Katherine / Amy
 
-## Load World
+---
 
-```bash
-# This command is run on the host.
-python load_town5.py
-```
+## Experimental Machine Learning Models
 
-## Start Cameras
+These models and scripts are highly experimental and are provided in hopes of providing inspiration for future work rather than optimizing for ease of use. Please contact project authors for exact details but the rough steps are outlined below.
 
-```bash
-# This command is run on the host.
-python spawn_world5_cameras.py
-```
+### Machine Learning based PCAP Feature Extraction
 
-This script will start the cameras at the hardocded locations above and start recording to mp4 (with ffmpeg). This script is responsible for advancing the world tick when Carla is running in sync mode.
+This model is architected to:
 
-The videos are output to `scripts/videos`.
+1. Accept input of all inner camera `.pcap` files and pre-process them into `X` and `y` training data.
+1. Train a LSTM-based model to learn hidden features in the PCAP feature vectors.
+1. Perform inference on new `.pcap` files to determine timing of vehicle events.
 
-### Warning
 
-Do not advance the world tick with `world.tick()` in any other file.
+### Execution Instructions
 
-## Sync Videos _to_ the Mininet VM
-
-```bash
-# This command is run on the host.
-./scripts/mininet/push_video_to_mininet.sh
-```
-
-This will take the videos from `scripts/videos` and put it on `~/videos` on the Mininet VM.
-
-## Run the wifi simulator and packet capture
-
-```bash
-# These commands are run inside the mininet vm.
-cd ~/M202A-CARLA
-sudo ./clean_mininet.sh
-sudo python two_stations_wifi.py
-```
-
-The pcap files will be output to `~/M202A-CARLA/scripts/mininet/pcaps`.
-
-## Copy PCAP files out of the Mininet VM
-
-```bash
-# This command is run on the host.
-./scripts/mininet/sync_mininet_files.sh
-```
-
-The pcap files will be in `scripts/mininet/pcaps`.
+1. First generate ground truth data with `python ./scripts/mininet/parse_video.py`.
+    - Modify paths at the top of the file as needed. The video folder path must point to the location where *all*, both edge and inner, videos are stored.
+1. Generate feature vectors based on the collection of `.pcap` files from mininet. Run `./scripts/mininet/parse_pcap.py`.
+    - Adjust the paths as needed. `PCAPS_DIR` should point to the collecton of `.pcap` files obtained from: *Generate Inner Camera Network Data (MP4 -> PCAP)*.
+1. Train the machine learning mdoe with `python ./scripts/mininet/model.py`.
+    - Adjust the paths at the top of the file as needed.
+    - The general inputs to this file are:
+        - `X` = feature vector(s) processed from the raw `.pcap` files.
+        - `Y` = ground truth classification provided by `./scripts/mininet/parse_viceo.py`.
+1. Perform inference by specifying the necessary agruments to `python ./scripts/mininet/infer.py.`
+ 
