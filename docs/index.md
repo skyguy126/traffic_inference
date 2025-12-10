@@ -144,7 +144,7 @@ Throughout this project, we make the following assumptions
 ### **3.1 System Architecture**
 ![System Pipeline](./assets/img/system_pipeline.png)
 
-TODO: Vamsi add ~3 sentences about the system architecutre, no need to repeat what comes in 3.2 just describe the different subsystem divisions
+The system architecture is organized into three major subsystems: edge-camera perception, inner-camera wireless side-channel sensing, and a central fusion/inference module. Edge cameras handle visual detection, tracking, and global ID assignment, while inner cameras contribute anonymized event streams derived from encrypted Wi-Fi traffic. A final inference layer—implemented either with a Kalman+Hungarian tracker or a global graph-based optimizer. The final layer integrates these heterogeneous event sources into coherent vehicle position inferences.
 
 ### **3.2 Data Pipeline**
 Explain how data is collected, processed, and used.
