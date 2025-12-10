@@ -52,7 +52,8 @@ def solve_global_tracking(edge_data, inner_data):
             'id': i, # This will be the index in all_nodes
             'data': ev,
             'pos': np.array([ev[1], ev[2]]),
-            't': ev[0]
+            't': ev[0],
+            'camera_id': ev[3]  # Camera ID from inner data
         })
         
     node_counter = len(inner_nodes)
@@ -66,7 +67,8 @@ def solve_global_tracking(edge_data, inner_data):
             'car_id': car['id'],
             'pos': np.array([s_ev[1], s_ev[2]]),
             't': s_ev[0],
-            'global_idx': node_counter
+            'global_idx': node_counter,
+            'camera_id': s_ev[4]  # Camera ID from edge data
         }
         car['start_node'] = s_node
         all_nodes.append(s_node)
@@ -79,7 +81,8 @@ def solve_global_tracking(edge_data, inner_data):
             'car_id': car['id'],
             'pos': np.array([e_ev[1], e_ev[2]]),
             't': e_ev[0],
-            'global_idx': node_counter
+            'global_idx': node_counter,
+            'camera_id': e_ev[4]  # Camera ID from edge data
         }
         car['end_node'] = e_node
         all_nodes.append(e_node)
@@ -245,7 +248,8 @@ def solve_global_tracking(edge_data, inner_data):
                 'car_id': cid,
                 'est_x': round(car['start_node']['pos'][0], 2),
                 'est_y': round(car['start_node']['pos'][1], 2),
-                'source': 'start'
+                'source': 'start',
+                'camera_id': car['start_node']['camera_id']
             })
 
             # 2. Follow the edges
@@ -273,7 +277,8 @@ def solve_global_tracking(edge_data, inner_data):
                         'car_id': cid,
                         'est_x': round(n_obj['pos'][0], 2),
                         'est_y': round(n_obj['pos'][1], 2),
-                        'source': 'end'
+                        'source': 'end',
+                        'camera_id': n_obj['camera_id']
                     })
                     break # Reached end
                 else:
@@ -284,7 +289,8 @@ def solve_global_tracking(edge_data, inner_data):
                         'car_id': cid,
                         'est_x': round(n_obj['pos'][0], 2),
                         'est_y': round(n_obj['pos'][1], 2),
-                        'source': 'inner'
+                        'source': 'inner',
+                        'camera_id': n_obj['camera_id']
                     })
                     curr = next_node
                     

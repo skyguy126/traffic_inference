@@ -1,0 +1,252 @@
+[
+  {
+    "type": "edge",
+    "timestamp": 8.0,
+    "location": {
+      "x": 30.0,
+      "y": 202.5
+    },
+    "car_id": 1,
+    "camera_id": 5
+  },
+  {
+    "type": "edge",
+    "timestamp": 11.95,
+    "location": {
+      "x": 35.0,
+      "y": -200.0
+    },
+    "car_id": 2,
+    "camera_id": 4
+  },
+  {
+    "type": "inner",
+    "timestamp": 12.5,
+    "location": {
+      "x": 30.0,
+      "y": 142.5
+    },
+    "car_id": 1,
+    "camera_id": 6
+  },
+  {
+    "type": "inner",
+    "timestamp": 13.95,
+    "location": {
+      "x": 35.0,
+      "y": -150.0
+    },
+    "car_id": 2,
+    "camera_id": 1
+  },
+  {
+    "type": "edge",
+    "timestamp": 39.45,
+    "location": {
+      "x": 35.0,
+      "y": -200.0
+    },
+    "car_id": 3,
+    "camera_id": 4
+  },
+  {
+    "type": "inner",
+    "timestamp": 41.45,
+    "location": {
+      "x": 35.0,
+      "y": -150.0
+    },
+    "car_id": 1,
+    "camera_id": 1
+  },
+  {
+    "type": "inner",
+    "timestamp": 42.4,
+    "location": {
+      "x": -12.5,
+      "y": 2.5
+    },
+    "car_id": 2,
+    "camera_id": 14
+  },
+  {
+    "type": "inner",
+    "timestamp": 50.35,
+    "location": {
+      "x": -87.5,
+      "y": 0.0
+    },
+    "car_id": 2,
+    "camera_id": 18
+  },
+  {
+    "type": "inner",
+    "timestamp": 50.6,
+    "location": {
+      "x": 127.5,
+      "y": 0.0
+    },
+    "car_id": 1,
+    "camera_id": 10
+  },
+  {
+    "type": "inner",
+    "timestamp": 56.5,
+    "location": {
+      "x": 30.0,
+      "y": -50.0
+    },
+    "car_id": 3,
+    "camera_id": 2
+  },
+  {
+    "type": "inner",
+    "timestamp": 63.25,
+    "location": {
+      "x": -125.0,
+      "y": -45.0
+    },
+    "car_id": 2,
+    "camera_id": 27
+  },
+  {
+    "type": "inner",
+    "timestamp": 70.5,
+    "location": {
+      "x": 30.0,
+      "y": 40.0
+    },
+    "car_id": 3,
+    "camera_id": 3
+  },
+  {
+    "type": "inner",
+    "timestamp": 83.4,
+    "location": {
+      "x": 30.0,
+      "y": 142.5
+    },
+    "car_id": 3,
+    "camera_id": 6
+  },
+  {
+    "type": "inner",
+    "timestamp": 83.75,
+    "location": {
+      "x": -12.5,
+      "y": 87.5
+    },
+    "car_id": 1,
+    "camera_id": 15
+  },
+  {
+    "type": "inner",
+    "timestamp": 85.85,
+    "location": {
+      "x": -12.5,
+      "y": -90.0
+    },
+    "car_id": 2,
+    "camera_id": 13
+  },
+  {
+    "type": "edge",
+    "timestamp": 93.15,
+    "location": {
+      "x": 30.0,
+      "y": 202.5
+    },
+    "car_id": 1,
+    "camera_id": 5
+  },
+  {
+    "type": "inner",
+    "timestamp": 96.15,
+    "location": {
+      "x": -75.0,
+      "y": 145.0
+    },
+    "car_id": 3,
+    "camera_id": 21
+  },
+  {
+    "type": "inner",
+    "timestamp": 101.15,
+    "location": {
+      "x": 35.0,
+      "y": -150.0
+    },
+    "car_id": 2,
+    "camera_id": 1
+  },
+  {
+    "type": "edge",
+    "timestamp": 109.45,
+    "location": {
+      "x": 35.0,
+      "y": -200.0
+    },
+    "car_id": 2,
+    "camera_id": 4
+  },
+  {
+    "type": "inner",
+    "timestamp": 113.6,
+    "location": {
+      "x": -87.5,
+      "y": 87.5
+    },
+    "car_id": 3,
+    "camera_id": 20
+  },
+  {
+    "type": "inner",
+    "timestamp": 127.75,
+    "location": {
+      "x": -12.5,
+      "y": 87.5
+    },
+    "car_id": 3,
+    "camera_id": 15
+  },
+  {
+    "type": "inner",
+    "timestamp": 138.6,
+    "location": {
+      "x": 30.0,
+      "y": 142.5
+    },
+    "car_id": 3,
+    "camera_id": 6
+  },
+  {
+    "type": "edge",
+    "timestamp": 147.7,
+    "location": {
+      "x": 30.0,
+      "y": 202.5
+    },
+    "car_id": 3,
+    "camera_id": 5
+  },
+  {
+    "type": "edge",
+    "timestamp": 217.85,
+    "location": {
+      "x": 35.0,
+      "y": -200.0
+    },
+    "car_id": 3,
+    "camera_id": 4
+  },
+  {
+    "type": "inner",
+    "timestamp": 238.35,
+    "location": {
+      "x": 72.5,
+      "y": 85.0
+    },
+    "car_id": 3,
+    "camera_id": 9
+  }
+]

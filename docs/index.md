@@ -153,6 +153,8 @@ Throughout this project, we make the following assumptions
 ### **3.1 System Architecture**
 ![System Pipeline](./assets/img/system_pipeline.png)
 
+TODO: Vamsi add ~3 sentences about the system architecutre, no need to repeat what comes in 3.2 just describe the different subsystem divisions
+
 ### **3.2 Data Pipeline**
 Explain how data is collected, processed, and used.
 
@@ -409,10 +411,51 @@ Our event error rates are as follows:
 TODO: table
 
 
-We present a heuristic analysis of each dataset: 
+We present a discussion of each demo scenario, its significance, and discuss our findings.
 
-## Scenario 1: One car, 
-![one_car_2](../demos/one_car_2/graph_alg_plot.png)  
+## Demo 1: One Car, Simple Route
+<div style="display: flex; justify-content: space-between; gap: 10px;">
+    <figure style="text-align: center; margin: 0;">
+    <img src="./assets/img/one_car_2_KF.png" alt="one_car_2_KF" style="width: 100%; height: auto;">
+    <figcaption>Kalman Filter</figcaption>
+  </figure>
+  <figure style="text-align: center; margin: 0;">
+    <img src="./assets/img/one_car_2_graph.png" alt="one_car_2_graph" style="width: 100%; height: auto;">
+    <figcaption>Graph Optimization</figcaption>
+  </figure>
+</div>
+
+In this simple scenario, both approaches successfully detect all events in order, with no missing events, no added events, and no misclassified events. In the Kalman Filter approach, the car's trajectory overshoots, but is corrected back to the event location with a correct classification. This scenario is mostly a sanity check of our system, since with only one car in the area, identification of anonymous events is trivial. This scenario also shows global ID event tracking, as the car is not re-assigned a new identy upon exiting at the opposite edge camera. 
+
+## Demo 2: One Car, Moderate Route
+<div style="display: flex; justify-content: space-between; gap: 10px;">
+    <figure style="text-align: center; margin: 0;">
+    <img src="./assets/img/one_car_6_KF.png" alt="one_car_2_KF" style="width: 100%; height: auto;">
+    <figcaption>Kalman Filter</figcaption>
+  </figure>
+  <figure style="text-align: center; margin: 0;">
+    <img src="./assets/img/one_car_6_graph.png" alt="one_car_2_graph" style="width: 100%; height: auto;">
+    <figcaption>Graph Optimization</figcaption>
+  </figure>
+</div>
+
+This scenario varies from the first in that the car exits from the same edge camera that it entered from. In addition, the route becomes slightly more complex, introducing turns and crossing the same camera (camera 1) at two different times.  
+
+## Demo 3: Two Cars, Spatially Sparse
+<div style="display: flex; justify-content: space-between; gap: 10px;">
+    <figure style="text-align: center; margin: 0;">
+    <img src="./assets/img/two_cars_6_green_8_black_KF.png" alt="one_car_2_KF" style="width: 100%; height: auto;">
+    <figcaption>Kalman Filter</figcaption>
+</div>
+<div>
+  </figure>
+  <figure style="text-align: center; margin: 0;">
+    <img src="./assets/img/two_cars_6_green_8_black_graph.png" alt="one_car_2_graph" style="width: 100%; height: auto;">
+    <figcaption>Graph Optimization</figcaption>
+  </figure>
+</div>
+
+This scenario introduces a second car. Both cars enter the town within a few seconds of each other from different edge cameras, and traverse paths inside the town. They near the center of the map at similar times, providing a test of spatial ambiguity. This ambiguity proves difficult for both algorithms to parse, as 6 events are misclassified by the Kalman Filter algorithm and 
 
 ---
 

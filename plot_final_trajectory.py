@@ -30,6 +30,10 @@ def plot_trajectory_for_car(ax, car_data, car_id, graph_algorithm=False, label='
     car_data = car_data.sort_values('timestamp')# Plot scatter points colored by timestamp
     if graph_algorithm: 
         # Plot lines connecting the points for this car
+        for _, event in car_data.iterrows():
+            cam_x, cam_y = event['est_x'], event['est_y']
+            ax.text(cam_y, cam_x - 22, f"{event['camera_id']}", fontsize=9, color='darkblue', fontweight='bold', ha='center', va='top')
+
         ax.plot(car_data['est_y'], car_data['est_x'], color=color, alpha=0.8, linewidth=2, zorder=1, label=f'Estimated')
         return ax.scatter(car_data['est_y'], car_data['est_x'], s=300, alpha=0.6, c=car_data['timestamp'], cmap='viridis', label=label, zorder=2)
     return ax.scatter(car_data['est_y'], car_data['est_x'], s=10, alpha=0.6, c=car_data['timestamp'], cmap='viridis', label=label, zorder=2)
@@ -72,7 +76,7 @@ def plot_events_for_car(ax, car_id, events):
         if cam_x is not None:
             label = 'Edge Events' if not edge_plotted else ''
             ax.scatter(cam_y, cam_x, s=200, alpha=0.8, c='darkred', marker='*', label=label)
-            ax.text(cam_y, cam_x - 8, f"Cam {event['camera_id']}\n{event['car_id']}", fontsize=9, color='darkred', fontweight='bold', ha='center', va='top')
+            ax.text(cam_y, cam_x - 20, f"{event['camera_id']}", fontsize=9, color='darkred', fontweight='bold', ha='center', va='top')
             edge_plotted = True
     
     # Plot inner events
@@ -82,7 +86,7 @@ def plot_events_for_car(ax, car_id, events):
         if cam_x is not None:
             label = 'Inner Events' if not inner_plotted else ''
             ax.scatter(cam_y, cam_x, s=200, alpha=0.8, c='darkblue', marker='s', label=label)
-            ax.text(cam_y, cam_x - 8, f"Cam {event['camera_id']}\n{event['car_id']}", fontsize=9, color='darkblue', fontweight='bold', ha='center', va='top')
+            ax.text(cam_y, cam_x - 20, f"{event['camera_id']}", fontsize=9, color='darkblue', fontweight='bold', ha='center', va='top')
             inner_plotted = True
 
 def finalize_subplots(fig, scatters, demo_name, demo_path, graph_algorithm=False):
