@@ -394,7 +394,25 @@ Include:
 
 Each figure should have a caption and a short interpretation.
 
+We evalate our system across five scenarios: 
 
+| **Demo Case**| **Description**| **Purpose**|
+|------------------------|-----|-------------------------------|
+| `one_car_2`| A single car moves straight across from camera 5 to camera 4, exiting at a different edge camera.| - Tests straight trajectory across cameras.<br>- Simple case of exiting at a different edge camera.|
+| `one_car_6`| A single car exits at the same edge camera but completes a loop inside the town.| - Tests looping within the town.<br>- Returns to the same edge camera.|
+| `two_cars_6_cyan_5_black`| Two cars share some similar path components but in succession.| - Tests successive, partially overlapping paths for different cars.<br>- Demonstrates lack of direct interaction.|
+| `two_cars_6_green_8_black`| Two cars enter at similar times from opposite edges, travel spatially far apart routes, meet briefly, and exit the way they entered. | - Tests overlap in timing but spatial diversity.<br>- Demonstrates brief points of proximity and independent exiting routes.|
+| `three_cars_1_cyan_6_purple_8_white`| Builds on `two_cars_6green_8black` with a third car taking a longer route and exiting on the opposite side.| - Adds complexity with a third car.<br>- Highlights longer and independent paths.|
+
+Our event error rates are as follows: 
+
+TODO: table
+
+
+We present a heuristic analysis of each dataset: 
+
+## Scenario 1: One car, 
+![one_car_2](../demos/one_car_2/graph_alg_plot.png)  
 
 ---
 
@@ -452,6 +470,8 @@ Describe each dataset:
 * Labeling/annotation efforts
 
 Include your internal dataset if you collected one.
+
+
 ## **7.b. Software**
 
 List:
