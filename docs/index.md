@@ -148,6 +148,7 @@ Recommended subsections:
 
 Throughout this project, we make the following assumptions
 - Traffic is sparse: at any given time, only zero or one car occupies any camera's field of view. This pushes the edge case where multiple cars pass a single camera at one time, and two events must be detected, out of scope. In future work, this assumption can be lifted by inspecting the difference in encrypted network traffic when one car versus multiple cars pass. For example, if the disturbance size is found to be dependent upon the number of cars in the camera's view, this can be probabilistically added into the algorithm to trigger two anonymous events instead of one. 
+- No two cameras' fields of view overlap: no two cameras will pick up the same event. This assumption is reasonable because we are looking for coarse traffic tracking. Future work could be robust to this by inferring based on camera proximity and field of view to throw out events that are likely duplicates. 
 - Each camera transmits only to its associated access point, with no other traffic on that link; therefore all WiFi traffic observed on that network originates from the camera. In future work, this assumption could be relaxed by making the simulated WiFi network more robust, such as positioning packet sniffers between cameras and using triangulation to determine the camera from which the packets originate from. This would also decrease the deployment costs of such a system by decreasing the number of packet sniffers needed.  
 - The WiFi sniffer is positioned so it is within range of only a single camera/access-point pair at any given time, preventing capture of unrelated over-the-air traffic. This assumption is made to control our system, but future work could look to detect and filter out such noise. 
 - The multi-vantage identification system generates embeddings solely from vehicle appearance without incorporating temporal or spatial metadata. It performs reliably when vehicle colors differ significantly, but error rates may increase when vehicles have similar appearances. In our project, we use only one model of car (Toyota Prius), selected due to its medium size and prevalence in the real world. Cars are differentiated solely on a color basis, but future work could use license plate detection or other differentating features to more reliably track cars at edge nodes. 
@@ -158,7 +159,7 @@ Throughout this project, we make the following assumptions
 - Inner cameras were placed overhead to allow for cleaner data collection, but this is often not representative of reality. Robustness to camera placement should be explored in future work. 
 
 ### **3.1 System Architecture**
-![System Pipeline](./assets/img/system_flowchart.png)  
+![System Pipeline](./assets/img/system_pipeline.png)
 
 ### **3.2 Data Pipeline**
 Explain how data is collected, processed, and used.
@@ -219,11 +220,108 @@ Overlapping windows of 16 frames are generated with stride 1 to retain fine temp
 
 WIP Amy
 
+The final fusion algorithm utilizes a Kalman Filter for each car to track its current position over time. At each step in time (frame), events triggered at this frame are processed and the current world belief about the position of each car is updated. If there is an inner or edge event pertaining to a certain car, that car's KF filter is updated with the new information; else, it simply accumulates upon its internal belief. The high-level pseudocode is thus: 
+
+```
+# sorted by timestamp
+edge_cam_data = [[frame_num, location, car id], [frame_num, location, car id]...]
+inner_cam_data = [[frame_num, location], [frame_num, location]...]
+
+class Car_KF:
+    car_id
+
+    # factor velocity into KF but only really output position
+
+    known_position
+    known_confidence
+
+    pred_position
+    pred_confidence
+
+    curr_position
+    curr_confidence
+
+    predict()
+        calculate pred_current_position
+        calculate pred_confidence
+
+        curr_position = pred_current_position
+        curr_confidence = pred_confidence 
+
+    update(location)
+        calculate known_position
+        calculate known_confidence
+
+        curr_position = known_position
+        curr_confidence = known_confidence
+        
+
+main:
+    CURR_STATE = { 
+        car_1: Car_KF,
+        car_2: Car_KF,
+        ....
+    } # in implementation, starts empty {}
+
+    for each curr_frame in video_frames: 
+
+        # update car positions every frame, whether there was an event or not
+        for each Car_KF in CURR_STATE
+            car.KF.predict()
+
+        EVENT = None
+        # case inner event at current frame
+        while inner_cam_data[0].frame_num == curr_frame:
+            inner_event = inner_cam_data[0]
+
+            event_Car_KF = identify_event(CURR_STATE, inner_event)
+            output "event at {curr_frame} was triggered by car {event_car_id}"
+
+            eventCar = get Car_KF with id event_car_id
+            eventCar.KF.update(inner_event_location)
+
+            inner_cam_data.pop()
+
+        # case edge event at current frame
+        while edge_cam_data[0].frame_num == curr_frame: 
+            edge_event = edge_cam_data[0]
+
+            if eventCar in CURR_STATE:
+                remove eventCar from CURR_STATE # car exited
+                output "car {eventCar.id} exited at location {edge_event.location}"
+            else: 
+                add a new Car_KF initialized to {edge_event.location} to CURR_STATE
+            
+            outer_cam_data.pop()
+
+identify_event(event_location):
+    cost = [] 
+    for car in CURR_STATE: 
+        cost[car_id] = mahalanobis_distance(car, event_location)
+    
+    return Car_KF with lowest cost # hungarian algorithm step, equivalent to min of vector
+```
+
+Note that for the sake of extracting interesting information from the inner event data, identification of each inner anonymous event is treated as ground truth with respect to updating car locations (AMY: is this true?). 
+
+In implementation, the location of each event is abstracted in the event data as a `camera_id`, then mapped to coordinates that represent the camera's location. We did attempt world projection at the edge cameras, but realized that this information is not needed, as the point of an edge event is to identify an entry point and report the ground truth about a car's identity. The small difference between using the camera's position and the car's real position on the road is minimal compared to the much larger camera spacing. In other words, there is no ambiguity about For the inner cameras, 
+
+This approach relies heavily upon the quality of the input event sequences, and effectively assumes: 
+1. Events are correctly sorted by time
+2. Events are unique (no duplicate reports of the same car/camera/time encounter)
+3. Edge camera `car_id`'s are correctly assigned
+4. `camera_id`'s that reported each event are accurate
+
+
 ### **3.4 Hardware / Software Implementation**
 Explain equipment, libraries, or frameworks.
 
 ### **3.5 Key Design Decisions & Rationale**
 Describe the main design decisions you made.
+
+We chose CARLA's preset town 5 because of its inherent structure as a perimeter and inner areas, with two specific entry points at the east and west sides of of the town. This constrains our environment nicely, while still providing multiple entry points to confirm that global tracking works. The inner structure is mostly grid-like, lending itself to easy spacing of cameras with non-overlapping fields of view. 
+
+For our data fusion step, we decided against using a machine-learning approach due to lack of ML experience amongst team members. 
 
 ---
 
@@ -254,6 +352,7 @@ Synthesize the main insights from your work.
 
 This should synthesize—not merely repeat—your results.
 
+- Adding additional cost and rules to the cost function that is currently just `mahalanobis_distance` function 
 ---
 
 # **6. References**

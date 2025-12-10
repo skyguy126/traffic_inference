@@ -25,3 +25,5 @@ scripts/camera_configs.txt
 **/out
 **/tmp
 **.DS_Store
+.python-version
+venv*
