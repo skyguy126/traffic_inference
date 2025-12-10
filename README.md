@@ -137,6 +137,7 @@ To re-run all base demos through both algorithms and plot all results, run the `
 ### Run Error Analysis 
 
 Run error analysis for all scenarios in the specified folder (default `demos/`): `python ./comparison.py <folder>`
+
 ---
 
 ## Experimental Machine Learning Models
