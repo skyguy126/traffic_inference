@@ -350,7 +350,6 @@ Finally, there is a key distinction in *inference timing*:
 This tradeoff—between immediate, local inference and delayed, globally optimal assignment—will be an important factor in practical system design.
 
 ### **3.5 Hardware / Software Implementation**
-Explain equipment, libraries, or frameworks.
 
 #### Docker/PyLot Development Environment
 
