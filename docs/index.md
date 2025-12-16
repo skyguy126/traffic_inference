@@ -174,6 +174,19 @@ Packet traces are converted into per-frame descriptors by isolating 802.11 data 
 
 Overlapping windows of 16 frames are generated with stride 1 to retain fine temporal structure while expanding the effective dataset. An 80/20 split yields train/test partitions. A two-layer bidirectional LSTM (hidden size 128, dropout 0.1) maps each window to per-timestep predictions, optimized with mean squared error and Adam (learning rate 3e-4) for 75 epochs. This bi-directional, windowed formulation mirrors standard sequence-to-sequence regression setups, enabling the model to leverage both past and future context within each clip.
 
+*Model Architecture:*
+
+```python
+ BiLSTMRegressor(
+  (lstm): LSTM(3, 128, num_layers=2, batch_first=True, dropout=0.1, bidirectional=True)
+  (head): Sequential(
+    (0): Linear(in_features=256, out_features=128, bias=True)
+    (1): ReLU()
+    (2): Linear(in_features=128, out_features=1, bias=True)
+  )
+)
+```
+
 #### Event Parsing
 
 Events are parsed on a per-camera basis using the methods described above, then synthesized into two final lists `all_edge_events.json` and `all_inner_events.json` that are sorted by time. These represent all the scenario data that will be provided to the final algorithm(s).
