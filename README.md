@@ -6,7 +6,7 @@
 - **Katherine Sohn** (katherinesohn@ucla.edu, [GitHub](https://github.com/katherinesohn)) 
 - **Vamsi Eyunni** (veyunni@ucla.edu, [GitHub](https://github.com/skyguy126))
 
-### **[Project Website and Writeup](https://skyguy126.github.io/ECM202A_2025Fall_Project_6/)**
+### **[Project Website and Writeup](https://skyguy126.github.io/traffic_inference/)**
 
 ---
 
